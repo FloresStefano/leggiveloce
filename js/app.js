@@ -1,11 +1,16 @@
 (function () {
   "use strict";
 
-  const SESSION_LENGTH = 16; // numero di schede per partita
-  const CHECK_EVERY = 4;     // ogni quante schede compare la mini-verifica
-  const STORAGE_KEY = "leggoATempo:records";
+  const PAROLE_PER_PARTITA = 10;
+  const STORAGE_RECORDS = "leggoATempo:records:v2";
+  const STORAGE_NOMI = "leggoATempo:nomi";
+  const MAX_NOMI_RICORDATI = 12;
 
-  /** @type {HTMLElement} */
+  // Collega ogni gioco attivo al proprio elenco di parole.
+  const GAME_DATA = {
+    "bisillabe-piane-semplici": PAROLE_BISILLABE_PIANE,
+  };
+
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
   const $$ = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
 
@@ -16,87 +21,33 @@
   };
 
   const el = {
-    listaLivelli: $("#lista-livelli"),
-    progresso: $("#gioco-progresso"),
-    nomeLivello: $("#gioco-nome-livello"),
-    timerFill: $("#timer-fill"),
-    schedaTesto: $("#scheda-testo"),
+    listaGiochi: $("#lista-giochi"),
+    nomeGioco: $("#gioco-titolo"),
+    cronometro: $("#cronometro"),
+    paroleGriglia: $("#parole-griglia"),
     btnPausa: $("#btn-pausa"),
+    btnRicomincia: $("#btn-ricomincia"),
+    btnFine: $("#btn-fine"),
     btnEsci: $("#btn-esci"),
-    verificaOverlay: $("#verifica-overlay"),
-    verificaDomanda: $("#verifica-domanda"),
-    verificaOpzioni: $("#verifica-opzioni"),
-    verificaFeedback: $("#verifica-feedback"),
-    risultatiStelle: $("#risultati-stelle"),
-    risultatiTitolo: $("#risultati-titolo"),
-    statParole: $("#stat-parole"),
-    statVelocita: $("#stat-velocita"),
-    statPrecisione: $("#stat-precisione"),
-    btnRigioca: $("#btn-rigioca"),
-    btnCambiaLivello: $("#btn-cambia-livello"),
-    btnContrasto: $("#btn-contrasto"),
+    risultatiTempo: $("#risultati-tempo"),
+    risultatiMessaggio: $("#risultati-messaggio"),
+    nomeInput: $("#nome-input"),
+    nomeChips: $("#nome-chips"),
+    btnSalva: $("#btn-salva-record"),
+    salvaConferma: $("#salva-conferma"),
+    btnRiprova: $("#btn-riprova"),
+    btnNuoveParole: $("#btn-nuove-parole"),
+    btnRisultatiEsci: $("#btn-risultati-esci"),
   };
 
-  let state = null;
+  /** Stato della partita in corso */
+  let stato = null;
+  let timerIntervalId = null;
 
   function mostraSchermo(nome) {
     Object.values(schermi).forEach((s) => s.classList.remove("attivo"));
     schermi[nome].classList.add("attivo");
   }
-
-  // ---------- Record (localStorage) ----------
-
-  function leggiRecord() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    } catch (e) {
-      return {};
-    }
-  }
-
-  function salvaRecordSeMigliore(levelId, wpm, precisione) {
-    const record = leggiRecord();
-    const attuale = record[levelId] || { bestWpm: 0, bestPrecisione: 0 };
-    const nuovo = {
-      bestWpm: Math.max(attuale.bestWpm, wpm),
-      bestPrecisione:
-        precisione === null
-          ? attuale.bestPrecisione
-          : Math.max(attuale.bestPrecisione, precisione),
-    };
-    record[levelId] = nuovo;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
-    } catch (e) {
-      /* localStorage non disponibile: si continua senza salvare */
-    }
-    return nuovo;
-  }
-
-  // ---------- Home ----------
-
-  function renderHome() {
-    const record = leggiRecord();
-    el.listaLivelli.innerHTML = "";
-    LEVELS.forEach((livello) => {
-      const rec = record[livello.id];
-      const btn = document.createElement("button");
-      btn.className = "livello-card";
-      btn.style.setProperty("--livello-colore", livello.colore);
-      btn.innerHTML = `
-        <span class="livello-card__emoji">${livello.emoji}</span>
-        <span class="livello-card__nome">${livello.nome}</span>
-        <span class="livello-card__desc">${livello.descrizione}</span>
-        <span class="livello-card__record">${
-          rec ? `Record: ${rec.bestWpm} parole/min` : "Nessun record ancora"
-        }</span>
-      `;
-      btn.addEventListener("click", () => avviaLivello(livello.id));
-      el.listaLivelli.appendChild(btn);
-    });
-  }
-
-  // ---------- Utilità ----------
 
   function mescola(array) {
     const copia = array.slice();
@@ -107,210 +58,302 @@
     return copia;
   }
 
-  function contaParole(frase) {
-    return frase.trim().split(/\s+/).length;
+  // ---------- Salvataggio record (localStorage) ----------
+
+  function leggiRecords() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_RECORDS)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function salvaRecords(records) {
+    try {
+      localStorage.setItem(STORAGE_RECORDS, JSON.stringify(records));
+    } catch (e) {
+      /* storage non disponibile: si continua senza salvare */
+    }
+  }
+
+  function leggiNomiRicordati() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_NOMI)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function ricordaNome(nome) {
+    let nomi = leggiNomiRicordati().filter(
+      (n) => n.toLowerCase() !== nome.toLowerCase()
+    );
+    nomi.unshift(nome);
+    nomi = nomi.slice(0, MAX_NOMI_RICORDATI);
+    try {
+      localStorage.setItem(STORAGE_NOMI, JSON.stringify(nomi));
+    } catch (e) {
+      /* ignora */
+    }
+    return nomi;
+  }
+
+  // Salva il tempo solo se e' un nuovo record per quel bambino in quel gioco.
+  // Ritorna { nuovoRecord: bool, precedente: numero|null }
+  function salvaRecordSeMigliore(gameId, nome, tempoMs) {
+    const records = leggiRecords();
+    if (!records[gameId]) records[gameId] = {};
+    const chiave = nome.toLowerCase();
+    const esistente = records[gameId][chiave];
+
+    if (!esistente || tempoMs < esistente.tempoMs) {
+      records[gameId][chiave] = {
+        nome,
+        tempoMs,
+        data: new Date().toISOString(),
+      };
+      salvaRecords(records);
+      return { nuovoRecord: true, precedente: esistente ? esistente.tempoMs : null };
+    }
+    return { nuovoRecord: false, precedente: esistente.tempoMs };
+  }
+
+  function classificaGioco(gameId) {
+    const records = leggiRecords()[gameId] || {};
+    return Object.values(records).sort((a, b) => a.tempoMs - b.tempoMs);
+  }
+
+  // ---------- Formattazione tempo ----------
+
+  function formattaTempo(ms) {
+    const totaliSecondi = ms / 1000;
+    if (totaliSecondi < 60) {
+      return `${totaliSecondi.toFixed(1)}s`;
+    }
+    const minuti = Math.floor(totaliSecondi / 60);
+    const secondi = (totaliSecondi % 60).toFixed(1).padStart(4, "0");
+    return `${minuti}:${secondi}`;
+  }
+
+  // ---------- Home ----------
+
+  function renderHome() {
+    el.listaGiochi.innerHTML = "";
+    GAMES.forEach((gioco) => {
+      const card = document.createElement("div");
+      card.className = "gioco-card" + (gioco.attivo ? "" : " gioco-card--disabilitato");
+      card.style.setProperty("--gioco-colore", gioco.colore);
+
+      const classifica = gioco.attivo ? classificaGioco(gioco.id) : [];
+      const classificaHtml = gioco.attivo
+        ? renderClassificaHtml(classifica)
+        : "";
+
+      card.innerHTML = `
+        <button class="gioco-card__avvia" ${gioco.attivo ? "" : "disabled"}>
+          <span class="gioco-card__emoji">${gioco.emoji}</span>
+          <span class="gioco-card__titolo">${gioco.titolo}</span>
+          <span class="gioco-card__desc">${gioco.descrizione}</span>
+        </button>
+        ${classificaHtml}
+      `;
+
+      if (gioco.attivo) {
+        $(".gioco-card__avvia", card).addEventListener("click", () =>
+          avviaGioco(gioco.id)
+        );
+      }
+
+      el.listaGiochi.appendChild(card);
+    });
+  }
+
+  function renderClassificaHtml(classifica) {
+    if (!classifica.length) {
+      return `<p class="classifica-vuota">Nessun record ancora: sii il primo a giocare!</p>`;
+    }
+    const medaglie = ["🥇", "🥈", "🥉"];
+    const righe = classifica
+      .slice(0, 8)
+      .map((r, i) => {
+        const medaglia = medaglie[i] || `${i + 1}.`;
+        return `<li><span class="classifica-pos">${medaglia}</span><span class="classifica-nome">${escapeHtml(
+          r.nome
+        )}</span><span class="classifica-tempo">${formattaTempo(
+          r.tempoMs
+        )}</span></li>`;
+      })
+      .join("");
+    return `<ol class="classifica">${righe}</ol>`;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
   }
 
   // ---------- Partita ----------
 
-  function avviaLivello(levelId) {
-    const livello = LEVELS.find((l) => l.id === levelId);
-    if (!livello) return;
+  function avviaGioco(gameId) {
+    const gioco = GAMES.find((g) => g.id === gameId);
+    const pool = GAME_DATA[gameId];
+    if (!gioco || !gioco.attivo || !pool) return;
 
-    const deck = mescola(livello.schede).slice(
-      0,
-      Math.min(SESSION_LENGTH, livello.schede.length)
-    );
+    const parole = mescola(pool).slice(0, PAROLE_PER_PARTITA);
 
-    state = {
-      livello,
-      deck,
-      indice: 0,
-      mostrate: 0,
-      dalUltimaVerifica: 0,
-      corretti: 0,
-      totaleVerifiche: 0,
-      inizio: Date.now(),
-      pausaInizio: null,
-      msInPausa: 0,
-      inPausa: false,
+    stato = {
+      gameId,
+      gioco,
+      parole,
+      accumulatoMs: 0,
+      inCorso: false,
+      inizioSegmento: null,
     };
 
-    el.nomeLivello.textContent = `${livello.emoji} ${livello.nome}`;
+    el.nomeGioco.textContent = `${gioco.emoji} ${gioco.titolo}`;
+    renderParoleGriglia(parole);
     mostraSchermo("gioco");
-    mostraScheda();
+    avviaCronometro();
   }
 
-  function mostraScheda() {
-    const { deck, indice, livello } = state;
-    if (indice >= deck.length) {
-      terminaPartita();
-      return;
-    }
-
-    const frase = deck[indice];
-    el.schedaTesto.textContent = frase;
-    el.progresso.textContent = `Scheda ${indice + 1} di ${deck.length}`;
-
-    el.timerFill.classList.remove("correndo");
-    // forza il reflow per poter riavviare l'animazione
-    void el.timerFill.offsetWidth;
-    el.timerFill.style.animationDuration = livello.displayMs + "ms";
-    el.timerFill.classList.add("correndo");
-
-    el.timerFill.addEventListener("animationend", onFineTimer, { once: true });
+  function renderParoleGriglia(parole) {
+    el.paroleGriglia.innerHTML = "";
+    parole.forEach((p) => {
+      const tile = document.createElement("div");
+      tile.className = "parola-tile";
+      tile.innerHTML = `
+        <span class="parola-tile__parola">${escapeHtml(p.parola)}</span>
+        <span class="parola-tile__sillabe">${escapeHtml(p.sillabe)}</span>
+      `;
+      el.paroleGriglia.appendChild(tile);
+    });
   }
 
-  function onFineTimer() {
-    const { deck, indice } = state;
-    const fraseAppenaMostrata = deck[indice];
-    state.mostrate += 1;
-    state.dalUltimaVerifica += 1;
-    state.indice += 1;
+  // ---------- Cronometro ----------
 
-    if (state.mostrate >= state.deck.length) {
-      terminaPartita();
-      return;
-    }
+  function tempoTrascorsoMs() {
+    if (!stato) return 0;
+    const inCorsoMs = stato.inCorso ? performance.now() - stato.inizioSegmento : 0;
+    return stato.accumulatoMs + inCorsoMs;
+  }
 
-    if (state.dalUltimaVerifica >= CHECK_EVERY) {
-      state.dalUltimaVerifica = 0;
-      mostraVerifica(fraseAppenaMostrata);
-    } else {
-      mostraScheda();
-    }
+  function aggiornaDisplayCronometro() {
+    el.cronometro.textContent = formattaTempo(tempoTrascorsoMs());
+  }
+
+  function avviaCronometro() {
+    if (!stato || stato.inCorso) return;
+    stato.inCorso = true;
+    stato.inizioSegmento = performance.now();
+    aggiornaDisplayCronometro();
+    timerIntervalId = setInterval(aggiornaDisplayCronometro, 100);
+    el.btnPausa.textContent = "⏸️ Pausa";
+  }
+
+  function pausaCronometro() {
+    if (!stato || !stato.inCorso) return;
+    stato.accumulatoMs += performance.now() - stato.inizioSegmento;
+    stato.inCorso = false;
+    stato.inizioSegmento = null;
+    clearInterval(timerIntervalId);
+    aggiornaDisplayCronometro();
+    el.btnPausa.textContent = "▶️ Riprendi";
   }
 
   function togglePausa() {
-    if (!state) return;
-    state.inPausa = !state.inPausa;
-    if (state.inPausa) {
-      state.pausaInizio = Date.now();
-      el.timerFill.style.animationPlayState = "paused";
-      el.btnPausa.textContent = "▶️";
-      el.btnPausa.setAttribute("aria-label", "Riprendi");
-    } else {
-      state.msInPausa += Date.now() - state.pausaInizio;
-      el.timerFill.style.animationPlayState = "running";
-      el.btnPausa.textContent = "⏸️";
-      el.btnPausa.setAttribute("aria-label", "Pausa");
-    }
+    if (!stato) return;
+    if (stato.inCorso) pausaCronometro();
+    else avviaCronometro();
+  }
+
+  function ricominciaStesseParole() {
+    if (!stato) return;
+    stato.accumulatoMs = 0;
+    stato.inCorso = false;
+    stato.inizioSegmento = null;
+    clearInterval(timerIntervalId);
+    el.cronometro.textContent = formattaTempo(0);
+    el.btnPausa.textContent = "⏸️ Pausa";
+    mostraSchermo("gioco");
+    avviaCronometro();
+  }
+
+  function finisciLettura() {
+    if (!stato) return;
+    if (stato.inCorso) pausaCronometro();
+    mostraRisultati();
   }
 
   function esciDalGioco() {
-    state = null;
+    clearInterval(timerIntervalId);
+    stato = null;
     renderHome();
     mostraSchermo("home");
   }
 
-  // ---------- Mini-verifica ----------
+  // ---------- Risultati / salvataggio ----------
 
-  function paroleValide(frase) {
-    const parole = frase.split(/\s+/).map((p) => p.toLowerCase());
-    const filtrate = parole.filter((p) => !PAROLE_FUNZIONE.has(p));
-    return filtrate.length ? filtrate : parole;
-  }
+  function mostraRisultati() {
+    const tempoFinale = tempoTrascorsoMs();
+    el.risultatiTempo.textContent = formattaTempo(tempoFinale);
+    el.risultatiMessaggio.textContent = "";
+    el.salvaConferma.textContent = "";
 
-  function mostraVerifica(frase) {
-    const candidate = paroleValide(frase);
-    const target = candidate[Math.floor(Math.random() * candidate.length)];
-
-    const tuttiTermini = new Set();
-    state.livello.schede.forEach((s) => {
-      paroleValide(s).forEach((p) => tuttiTermini.add(p));
-    });
-    tuttiTermini.delete(target);
-    const distrattori = mescola(Array.from(tuttiTermini)).slice(0, 2);
-
-    const opzioni = mescola([target, ...distrattori]);
-
-    el.verificaDomanda.textContent = "Quale parola hai appena letto?";
-    el.verificaOpzioni.innerHTML = "";
-    el.verificaFeedback.textContent = "";
-
-    opzioni.forEach((opzione) => {
-      const btn = document.createElement("button");
-      btn.className = "btn-opzione";
-      btn.textContent = opzione;
-      btn.addEventListener("click", () =>
-        valutaRisposta(btn, opzione === target, target)
-      );
-      el.verificaOpzioni.appendChild(btn);
-    });
-
-    el.verificaOverlay.classList.add("attivo");
-  }
-
-  function valutaRisposta(bottoneCliccato, corretta, target) {
-    state.totaleVerifiche += 1;
-    if (corretta) state.corretti += 1;
-
-    $$(".btn-opzione", el.verificaOpzioni).forEach((btn) => {
-      btn.disabled = true;
-      if (btn.textContent === target) btn.classList.add("corretta");
-      else if (btn === bottoneCliccato) btn.classList.add("sbagliata");
-    });
-
-    el.verificaFeedback.textContent = corretta
-      ? "Bravo! ✅"
-      : `Quasi! Era "${target}" 💪`;
-    el.verificaFeedback.style.color = corretta ? "#3fb984" : "#e0563f";
-
-    setTimeout(() => {
-      el.verificaOverlay.classList.remove("attivo");
-      if (state.mostrate >= state.deck.length) {
-        terminaPartita();
-      } else {
-        mostraScheda();
-      }
-    }, 1100);
-  }
-
-  // ---------- Risultati ----------
-
-  function terminaPartita() {
-    const elapsedMs =
-      Date.now() - state.inizio - state.msInPausa - (state.inPausa ? Date.now() - state.pausaInizio : 0);
-    const paroleTotali = state.deck
-      .slice(0, state.mostrate)
-      .reduce((tot, frase) => tot + contaParole(frase), 0);
-
-    const minuti = Math.max(elapsedMs / 60000, 0.05);
-    const wpm = Math.round(paroleTotali / minuti);
-    const precisione = state.totaleVerifiche
-      ? Math.round((state.corretti / state.totaleVerifiche) * 100)
-      : null;
-
-    salvaRecordSeMigliore(state.livello.id, wpm, precisione);
-
-    const stelle = calcolaStelle(precisione);
-    el.risultatiStelle.textContent = "⭐".repeat(stelle) + "☆".repeat(3 - stelle);
-    el.risultatiTitolo.textContent = `Hai completato "${state.livello.nome}"!`;
-    el.statParole.textContent = paroleTotali;
-    el.statVelocita.textContent = `${wpm}`;
-    el.statPrecisione.textContent =
-      precisione === null ? "–" : `${precisione}%`;
+    const nomi = leggiNomiRicordati();
+    el.nomeInput.value = nomi[0] || "";
+    renderNomeChips(nomi);
 
     mostraSchermo("risultati");
   }
 
-  function calcolaStelle(precisione) {
-    if (precisione === null) return 2;
-    if (precisione >= 80) return 3;
-    if (precisione >= 50) return 2;
-    return 1;
+  function renderNomeChips(nomi) {
+    el.nomeChips.innerHTML = "";
+    nomi.forEach((nome) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip-nome";
+      chip.textContent = nome;
+      chip.addEventListener("click", () => {
+        el.nomeInput.value = nome;
+      });
+      el.nomeChips.appendChild(chip);
+    });
   }
 
-  // ---------- Alto contrasto ----------
-
-  function applicaContrasto(attivo) {
-    document.documentElement.dataset.contrast = attivo ? "alto" : "";
-    el.btnContrasto.setAttribute("aria-pressed", String(attivo));
-    try {
-      localStorage.setItem("leggoATempo:contrasto", attivo ? "1" : "0");
-    } catch (e) {
-      /* ignora */
+  function salvaRecordCorrente() {
+    if (!stato) return;
+    const nome = el.nomeInput.value.trim();
+    if (!nome) {
+      el.salvaConferma.textContent = "Scrivi il tuo nome prima di salvare 🙂";
+      el.salvaConferma.style.color = "var(--error)";
+      return;
     }
+
+    const tempoFinale = tempoTrascorsoMs();
+    const esito = salvaRecordSeMigliore(stato.gameId, nome, tempoFinale);
+    ricordaNome(nome);
+    renderNomeChips(leggiNomiRicordati());
+
+    if (esito.nuovoRecord && esito.precedente === null) {
+      el.salvaConferma.textContent = `🎉 Primo record salvato per ${nome}!`;
+      el.salvaConferma.style.color = "var(--success)";
+    } else if (esito.nuovoRecord) {
+      el.salvaConferma.textContent = `🏆 Nuovo record per ${nome}! Prima: ${formattaTempo(
+        esito.precedente
+      )}`;
+      el.salvaConferma.style.color = "var(--success)";
+    } else {
+      el.salvaConferma.textContent = `Il record di ${nome} resta ${formattaTempo(
+        esito.precedente
+      )} (questo tentativo: ${formattaTempo(tempoFinale)})`;
+      el.salvaConferma.style.color = "var(--ink)";
+    }
+  }
+
+  function nuovaSequenza() {
+    if (!stato) return;
+    avviaGioco(stato.gameId);
   }
 
   // ---------- Avvio ----------
@@ -320,25 +363,14 @@
     mostraSchermo("home");
 
     el.btnPausa.addEventListener("click", togglePausa);
+    el.btnRicomincia.addEventListener("click", ricominciaStesseParole);
+    el.btnFine.addEventListener("click", finisciLettura);
     el.btnEsci.addEventListener("click", esciDalGioco);
-    el.btnRigioca.addEventListener("click", () => avviaLivello(state.livello.id));
-    el.btnCambiaLivello.addEventListener("click", () => {
-      state = null;
-      renderHome();
-      mostraSchermo("home");
-    });
-    el.btnContrasto.addEventListener("click", () => {
-      const attivo = document.documentElement.dataset.contrast !== "alto";
-      applicaContrasto(attivo);
-    });
 
-    let contrastoSalvato = "0";
-    try {
-      contrastoSalvato = localStorage.getItem("leggoATempo:contrasto") || "0";
-    } catch (e) {
-      /* ignora */
-    }
-    applicaContrasto(contrastoSalvato === "1");
+    el.btnSalva.addEventListener("click", salvaRecordCorrente);
+    el.btnRiprova.addEventListener("click", ricominciaStesseParole);
+    el.btnNuoveParole.addEventListener("click", nuovaSequenza);
+    el.btnRisultatiEsci.addEventListener("click", esciDalGioco);
   }
 
   document.addEventListener("DOMContentLoaded", init);

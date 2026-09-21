@@ -17,15 +17,6 @@
   --font-body: "Lexend", system-ui, sans-serif;
 }
 
-:root[data-contrast="alto"] {
-  --bg: #0f1115;
-  --card-bg: #1c1f26;
-  --ink: #f5f5f5;
-  --accent-soft: #3a2a26;
-  --success-soft: #163d2c;
-  --error-soft: #3d2018;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -41,7 +32,6 @@ body {
   color: var(--ink);
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
-  transition: background 0.3s ease, color 0.3s ease;
 }
 
 button {
@@ -86,90 +76,114 @@ button {
   line-height: 1;
 }
 
-.livelli {
+.giochi-lista {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 20px;
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
 }
 
-.livello-card {
+.gioco-card {
   background: var(--card-bg);
-  border: none;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  padding: 24px;
-  cursor: pointer;
-  text-align: left;
+  padding: 4px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-height: 170px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
   border: 3px solid transparent;
 }
 
-.livello-card:active {
-  transform: scale(0.97);
+.gioco-card--disabilitato {
+  opacity: 0.55;
 }
 
-.livello-card:hover,
-.livello-card:focus-visible {
-  border-color: var(--livello-colore, var(--accent));
+.gioco-card__avvia {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  border-radius: var(--radius-lg);
 }
 
-.livello-card__emoji {
+.gioco-card__avvia:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.gioco-card__avvia:disabled {
+  cursor: not-allowed;
+}
+
+.gioco-card__emoji {
   font-size: 2.4rem;
 }
 
-.livello-card__nome {
+.gioco-card__titolo {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  color: var(--livello-colore, var(--accent-dark));
+  font-size: 1.4rem;
+  color: var(--gioco-colore, var(--accent-dark));
 }
 
-.livello-card__desc {
+.gioco-card__desc {
   font-size: 0.95rem;
   opacity: 0.8;
 }
 
-.livello-card__record {
-  margin-top: auto;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--livello-colore, var(--accent-dark));
-}
+/* Classifica dentro la card del gioco */
 
-.home__opzioni {
-  margin-top: 28px;
+.classifica {
+  list-style: none;
+  margin: 0;
+  padding: 0 20px 18px;
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.btn-toggle {
-  background: var(--card-bg);
-  border: 2px solid var(--accent-soft);
-  border-radius: 999px;
-  padding: 10px 18px;
+.classifica li {
+  display: grid;
+  grid-template-columns: 2em 1fr auto;
+  gap: 8px;
+  align-items: center;
   font-size: 0.95rem;
-  color: var(--ink);
-  box-shadow: var(--shadow);
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
 }
 
-.btn-toggle[aria-pressed="true"] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+.classifica-pos {
   font-weight: 700;
+  text-align: center;
+}
+
+.classifica-nome {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.classifica-tempo {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-dark);
+  font-weight: 700;
+}
+
+.classifica-vuota {
+  padding: 0 20px 18px;
+  font-size: 0.9rem;
+  opacity: 0.7;
 }
 
 /* ---------- GIOCO ---------- */
 
 .gioco {
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -180,193 +194,156 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-.gioco__progresso {
-  font-weight: 700;
-  font-size: 1.1rem;
+.gioco__titolo {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  color: var(--accent-dark);
 }
 
-.gioco__azioni {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-icona {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: none;
+.cronometro {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.8rem, 6vw, 2.8rem);
   background: var(--card-bg);
   box-shadow: var(--shadow);
-  font-size: 1.4rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.timer-bar {
-  width: 100%;
-  height: 16px;
-  background: var(--accent-soft);
   border-radius: 999px;
-  overflow: hidden;
-  margin-bottom: 28px;
+  padding: 8px 26px;
+  color: var(--accent-dark);
 }
 
-.timer-bar__fill {
-  height: 100%;
-  width: 100%;
-  background: var(--accent);
-  border-radius: inherit;
-  transform-origin: left;
-}
-
-.timer-bar__fill.correndo {
-  animation-name: countdown;
-  animation-timing-function: linear;
-  animation-fill-mode: forwards;
-}
-
-@keyframes countdown {
-  from { transform: scaleX(1); }
-  to { transform: scaleX(0); }
-}
-
-.scheda {
+.parole-griglia {
   flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  align-content: start;
+  margin-bottom: 24px;
+}
+
+.parola-tile {
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: clamp(14px, 3vw, 22px);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: clamp(24px, 6vw, 60px);
-  min-height: 220px;
+  gap: 4px;
+  min-height: 100px;
 }
 
-.scheda__testo {
+.parola-tile__parola {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(2rem, 8vw, 5rem);
-  text-align: center;
+  font-size: clamp(1.5rem, 4.5vw, 2.4rem);
   color: var(--ink);
   user-select: none;
 }
 
-/* ---------- VERIFICA ---------- */
-
-.verifica-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 17, 21, 0.55);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 20;
+.parola-tile__sillabe {
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  color: var(--accent-dark);
+  opacity: 0.75;
+  letter-spacing: 0.03em;
+  user-select: none;
 }
 
-.verifica-overlay.attivo {
+.gioco__azioni {
   display: flex;
-}
-
-.verifica-card {
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: clamp(20px, 5vw, 40px);
-  max-width: 520px;
-  width: 100%;
-  text-align: center;
-}
-
-.verifica-card__domanda {
-  font-family: var(--font-display);
-  font-size: clamp(1.3rem, 4vw, 1.8rem);
-  margin-bottom: 20px;
-}
-
-.verifica-opzioni {
-  display: grid;
   gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding-bottom: 8px;
 }
 
-.btn-opzione {
-  border: 3px solid var(--accent-soft);
-  background: var(--bg);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  font-size: clamp(1.1rem, 3.2vw, 1.4rem);
-  font-weight: 600;
-  color: var(--ink);
-  min-height: 56px;
-}
-
-.btn-opzione.corretta {
-  border-color: var(--success);
-  background: var(--success-soft);
-}
-
-.btn-opzione.sbagliata {
-  border-color: var(--error);
-  background: var(--error-soft);
-}
-
-.verifica-feedback {
-  margin-top: 14px;
-  font-weight: 700;
-  min-height: 1.4em;
+.btn-fine {
+  font-size: 1.25rem;
+  padding: 18px 36px;
 }
 
 /* ---------- RISULTATI ---------- */
 
 .risultati {
-  max-width: 640px;
+  max-width: 560px;
   width: 100%;
   text-align: center;
 }
 
-.risultati__stelle {
-  font-size: clamp(2.4rem, 7vw, 3.6rem);
-  margin: 16px 0;
-}
-
 .risultati__titolo {
   font-family: var(--font-display);
-  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-size: clamp(1.6rem, 4.5vw, 2.2rem);
   color: var(--accent-dark);
+  margin-bottom: 6px;
 }
 
-.risultati__griglia {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 14px;
-  margin: 28px 0;
-}
-
-.risultati__stat {
-  background: var(--card-bg);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow);
-  padding: 18px 12px;
-}
-
-.risultati__stat-valore {
+.risultati__tempo {
   font-family: var(--font-display);
-  font-size: 1.8rem;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2.4rem, 8vw, 3.6rem);
+  color: var(--ink);
+}
+
+.risultati__messaggio {
+  min-height: 1.4em;
+  font-weight: 600;
   color: var(--accent-dark);
 }
 
-.risultati__stat-label {
-  font-size: 0.85rem;
-  opacity: 0.75;
+.salva-record {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.salva-record__label {
+  font-weight: 700;
+  text-align: left;
+}
+
+.salva-record__input {
+  font-family: inherit;
+  font-size: 1.2rem;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--accent-soft);
+  min-height: 52px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.chip-nome {
+  border: 2px solid var(--accent-soft);
+  background: var(--bg);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.salva-conferma {
+  min-height: 1.4em;
+  font-weight: 700;
 }
 
 .risultati__azioni {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -376,10 +353,10 @@ button {
 .btn-primario, .btn-secondario {
   border: none;
   border-radius: 999px;
-  padding: 16px 30px;
-  font-size: 1.1rem;
+  padding: 14px 26px;
+  font-size: 1.05rem;
   font-weight: 700;
-  min-height: 56px;
+  min-height: 52px;
   cursor: pointer;
 }
 
@@ -399,8 +376,6 @@ button {
   border: 2px solid var(--accent-soft);
 }
 
-@media (max-width: 480px) {
-  .gioco__header {
-    flex-wrap: wrap;
-  }
+.btn-secondario:active {
+  transform: scale(0.97);
 }
