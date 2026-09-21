@@ -1,0 +1,20 @@
+{
+  "name": "Leggo a Tempo",
+  "short_name": "Leggo a Tempo",
+  "description": "Gioco gratuito per allenare la lettura veloce: gruppi di parole a tempo.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fff8ec",
+  "theme_color": "#ff6f59",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

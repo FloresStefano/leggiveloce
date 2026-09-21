@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Leggo a Tempo: gioco gratuito per allenare la lettura veloce dei bambini, gruppi di parole a tempo." />
+<meta name="theme-color" content="#ff6f59" />
+<title>Leggo a Tempo</title>
+
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon.svg" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Lexend:wght@400;600;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<main>
+
+  <!-- SCHERMATA HOME -->
+  <section id="schermo-home" class="screen attivo">
+    <div class="home__mascotte" aria-hidden="true">📖⏱️</div>
+    <h1 class="home__titolo">Leggo a Tempo</h1>
+    <p class="home__sottotitolo">
+      Leggi i gruppi di parole prima che il tempo scada. Scegli un livello e inizia!
+    </p>
+
+    <div id="lista-livelli" class="livelli" role="list"></div>
+
+    <div class="home__opzioni">
+      <button id="btn-contrasto" class="btn-toggle" aria-pressed="false">
+        🌓 Alto contrasto
+      </button>
+    </div>
+  </section>
+
+  <!-- SCHERMATA GIOCO -->
+  <section id="schermo-gioco" class="screen">
+    <div class="gioco">
+      <div class="gioco__header">
+        <div>
+          <div id="gioco-nome-livello" class="gioco__progresso"></div>
+          <div id="gioco-progresso" class="gioco__progresso"></div>
+        </div>
+        <div class="gioco__azioni">
+          <button id="btn-pausa" class="btn-icona" aria-label="Pausa">⏸️</button>
+          <button id="btn-esci" class="btn-icona" aria-label="Esci">🏠</button>
+        </div>
+      </div>
+
+      <div class="timer-bar">
+        <div id="timer-fill" class="timer-bar__fill"></div>
+      </div>
+
+      <div class="scheda">
+        <p id="scheda-testo" class="scheda__testo"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCHERMATA RISULTATI -->
+  <section id="schermo-risultati" class="screen">
+    <div class="risultati">
+      <div id="risultati-stelle" class="risultati__stelle"></div>
+      <h2 id="risultati-titolo" class="risultati__titolo"></h2>
+
+      <div class="risultati__griglia">
+        <div class="risultati__stat">
+          <div id="stat-parole" class="risultati__stat-valore">0</div>
+          <div class="risultati__stat-label">parole lette</div>
+        </div>
+        <div class="risultati__stat">
+          <div id="stat-velocita" class="risultati__stat-valore">0</div>
+          <div class="risultati__stat-label">parole al minuto</div>
+        </div>
+        <div class="risultati__stat">
+          <div id="stat-precisione" class="risultati__stat-valore">–</div>
+          <div class="risultati__stat-label">precisione verifica</div>
+        </div>
+      </div>
+
+      <div class="risultati__azioni">
+        <button id="btn-rigioca" class="btn-primario">🔁 Rigioca</button>
+        <button id="btn-cambia-livello" class="btn-secondario">🏠 Cambia livello</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- VERIFICA (overlay sopra la schermata gioco) -->
+<div id="verifica-overlay" class="verifica-overlay">
+  <div class="verifica-card">
+    <p id="verifica-domanda" class="verifica-card__domanda"></p>
+    <div id="verifica-opzioni" class="verifica-opzioni"></div>
+    <p id="verifica-feedback" class="verifica-feedback"></p>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
