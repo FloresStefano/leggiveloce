@@ -8,7 +8,8 @@ dispositivo (`localStorage`).
 ## 🎮 Gioco 1: "Leggi bisillabe piane semplici"
 
 1. Si entra nel gioco: parte subito un cronometro e vengono mostrate 10
-   parole scelte a caso da un elenco di 1000 bisillabe piane (es. "baba").
+   parole scelte a caso da un elenco di parole reali bisillabe piane, al
+   singolare e al plurale (es. "casa", "case").
    Ogni parola è mostrata in grande, con la sua struttura sillabica
    (es. "ba-ba") più piccola sotto.
 2. Il bambino legge le 10 parole ad alta voce; quando ha finito preme
@@ -32,7 +33,7 @@ finché non verranno definiti e attivati.
 index.html                       pagina principale (home, gioco, risultati)
 css/style.css                    stile grafico, responsive, pensato per tablet
 js/games.js                      elenco dei giochi disponibili (attivi/non attivi)
-js/games/bisillabe-piane-semplici.js   le 1000 parole del primo gioco
+js/games/bisillabe-piane-semplici.js   le parole del primo gioco
 js/app.js                        logica: cronometro, griglia parole, record
 manifest.json                    per "Aggiungi a Home" su tablet/telefono
 icon.svg                         icona dell'app
