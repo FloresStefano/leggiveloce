@@ -1,7 +1,8 @@
 (function () {
   "use strict";
 
-  const PAROLE_PER_PARTITA = 10;
+  const PAROLE_PER_PARTITA_LETTURA = 10;
+  const PAROLE_PER_PARTITA_ABBINAMENTO = 8;
   const STORAGE_RECORDS = "leggoATempo:records:v2";
   const STORAGE_NOMI = "leggoATempo:nomi";
   const MAX_NOMI_RICORDATI = 12;
@@ -261,7 +262,7 @@
     const pool = GAME_DATA[gameId];
     if (!gioco || !gioco.attivo || !pool) return;
 
-    const parole = mescola(pool).slice(0, PAROLE_PER_PARTITA);
+    const parole = mescola(pool).slice(0, PAROLE_PER_PARTITA_LETTURA);
 
     stato = {
       gameId,
@@ -356,7 +357,7 @@
     const pool = GAME_DATA[gameId];
     if (!gioco || !gioco.attivo || !pool) return;
 
-    const parole = mescola(pool).slice(0, PAROLE_PER_PARTITA);
+    const parole = mescola(pool).slice(0, PAROLE_PER_PARTITA_ABBINAMENTO);
     const coppie = parole.map((p, i) => {
       const parti = p.sillabe.split("-");
       return {

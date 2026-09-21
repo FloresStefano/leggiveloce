@@ -31,18 +31,18 @@ dispositivo (`localStorage`).
 ## 🧩 Gioco 2: "Combina bisillabe"
 
 1. Si entra nel gioco: parte subito il cronometro (nessun conto alla
-   rovescia qui). Vengono mostrate due colonne con le stesse 10 parole
+   rovescia qui). Vengono mostrate due colonne con le stesse 8 parole
    del set estratto, spezzate a metà: a sinistra le prime metà, a destra
    le seconde metà, ciascuna colonna mescolata in modo indipendente.
 2. Il bambino tocca una metà a sinistra e una a destra per formare una
    parola. Se la coppia è corretta resta segnata come trovata (verde); se
    è sbagliata viene mostrato un errore (rosso, si può riprovare subito).
-3. Il cronometro si ferma da solo quando tutte le 10 coppie sono state
+3. Il cronometro si ferma da solo quando tutte le 8 coppie sono state
    trovate: l'obiettivo è trovarle tutte nel minor tempo possibile, poi
    si passa automaticamente alla schermata risultati.
 4. Come nel Gioco 1: si può salvare (o non salvare) il record, oppure
    ricominciare con le stesse coppie (posizioni rimescolate) o con una
-   nuova sfida di 10 parole diverse.
+   nuova sfida di 8 parole diverse.
 
 Entrambi i giochi condividono lo stesso elenco di parole
 (`js/games/bisillabe-piane-semplici.js`) e la stessa classifica per-gioco
