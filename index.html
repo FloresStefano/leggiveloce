@@ -30,7 +30,7 @@
     <div id="lista-giochi" class="giochi-lista"></div>
   </section>
 
-  <!-- SCHERMATA GIOCO -->
+  <!-- SCHERMATA GIOCO 1: Leggi bisillabe piane semplici -->
   <section id="schermo-gioco" class="screen">
     <div class="gioco">
       <div class="gioco__header">
@@ -38,13 +38,45 @@
         <div id="cronometro" class="cronometro">0.0s</div>
       </div>
 
-      <div id="parole-griglia" class="parole-griglia"></div>
+      <div class="gioco-area">
+        <div id="parole-griglia" class="parole-griglia"></div>
+
+        <div id="countdown-overlay" class="countdown-overlay">
+          <span id="countdown-testo" class="countdown-testo">3</span>
+        </div>
+      </div>
 
       <div class="gioco__azioni">
         <button id="btn-pausa" class="btn-secondario">⏸️ Pausa</button>
         <button id="btn-ricomincia" class="btn-secondario">🔁 Ricomincia</button>
+        <button id="btn-nuova-sfida" class="btn-secondario">🎲 Nuova sfida</button>
         <button id="btn-fine" class="btn-primario btn-fine">✅ FINE</button>
         <button id="btn-esci" class="btn-secondario">🏠 Esci</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCHERMATA GIOCO 2: Combina bisillabe -->
+  <section id="schermo-abbina" class="screen">
+    <div class="gioco">
+      <div class="gioco__header">
+        <div class="gioco__titolo">🧩 Combina bisillabe</div>
+        <div id="abbina-cronometro" class="cronometro">0.0s</div>
+      </div>
+
+      <p class="abbina-istruzioni">Tocca una parte a sinistra e la sua metà a destra per formare la parola.</p>
+
+      <div class="abbina-colonne">
+        <div id="abbina-sinistra" class="abbina-colonna"></div>
+        <div id="abbina-destra" class="abbina-colonna"></div>
+      </div>
+
+      <p id="abbina-messaggio" class="abbina-messaggio"></p>
+
+      <div class="gioco__azioni">
+        <button id="abbina-btn-ricomincia" class="btn-secondario">🔁 Ricomincia</button>
+        <button id="abbina-btn-nuova-sfida" class="btn-secondario">🎲 Nuova sfida</button>
+        <button id="abbina-btn-esci" class="btn-secondario">🏠 Esci</button>
       </div>
     </div>
   </section>
@@ -57,16 +89,19 @@
       <p id="risultati-messaggio" class="risultati__messaggio"></p>
 
       <div class="salva-record">
-        <label class="salva-record__label" for="nome-input">Chi ha letto?</label>
+        <label class="salva-record__label" for="nome-input">Chi ha giocato?</label>
         <input id="nome-input" class="salva-record__input" type="text" placeholder="Scrivi il tuo nome" maxlength="30" />
         <div id="nome-chips" class="chips"></div>
-        <button id="btn-salva-record" class="btn-primario">💾 Salva record</button>
+        <div class="salva-record__azioni">
+          <button id="btn-salva-record" class="btn-primario">💾 Salva record</button>
+          <button id="btn-non-salvare" class="btn-secondario">🚫 Non salvare</button>
+        </div>
         <p id="salva-conferma" class="salva-conferma"></p>
       </div>
 
       <div class="risultati__azioni">
-        <button id="btn-riprova" class="btn-secondario">🔁 Riprova (stesse parole)</button>
-        <button id="btn-nuove-parole" class="btn-secondario">🔀 Nuove parole</button>
+        <button id="btn-riprova" class="btn-secondario">🔁 Ricomincia</button>
+        <button id="btn-nuove-parole" class="btn-secondario">🎲 Nuova sfida</button>
         <button id="btn-risultati-esci" class="btn-secondario">🏠 Torna alla home</button>
       </div>
     </div>

@@ -5,10 +5,13 @@
   const STORAGE_RECORDS = "leggoATempo:records:v2";
   const STORAGE_NOMI = "leggoATempo:nomi";
   const MAX_NOMI_RICORDATI = 12;
+  const COUNTDOWN_STEPS = ["3", "2", "1", "VIA!"];
+  const COUNTDOWN_STEP_MS = 700;
 
   // Collega ogni gioco attivo al proprio elenco di parole.
   const GAME_DATA = {
     "bisillabe-piane-semplici": PAROLE_BISILLABE_PIANE,
+    "combina-bisillabe": PAROLE_BISILLABE_PIANE,
   };
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
@@ -17,30 +20,46 @@
   const schermi = {
     home: $("#schermo-home"),
     gioco: $("#schermo-gioco"),
+    abbina: $("#schermo-abbina"),
     risultati: $("#schermo-risultati"),
   };
 
   const el = {
+    // home
     listaGiochi: $("#lista-giochi"),
+    // gioco 1: lettura a tempo
     nomeGioco: $("#gioco-titolo"),
     cronometro: $("#cronometro"),
     paroleGriglia: $("#parole-griglia"),
+    countdownOverlay: $("#countdown-overlay"),
+    countdownTesto: $("#countdown-testo"),
     btnPausa: $("#btn-pausa"),
     btnRicomincia: $("#btn-ricomincia"),
+    btnNuovaSfida: $("#btn-nuova-sfida"),
     btnFine: $("#btn-fine"),
     btnEsci: $("#btn-esci"),
+    // gioco 2: combina bisillabe
+    abbinaCronometro: $("#abbina-cronometro"),
+    abbinaSinistra: $("#abbina-sinistra"),
+    abbinaDestra: $("#abbina-destra"),
+    abbinaMessaggio: $("#abbina-messaggio"),
+    abbinaBtnRicomincia: $("#abbina-btn-ricomincia"),
+    abbinaBtnNuovaSfida: $("#abbina-btn-nuova-sfida"),
+    abbinaBtnEsci: $("#abbina-btn-esci"),
+    // risultati
     risultatiTempo: $("#risultati-tempo"),
     risultatiMessaggio: $("#risultati-messaggio"),
     nomeInput: $("#nome-input"),
     nomeChips: $("#nome-chips"),
     btnSalva: $("#btn-salva-record"),
+    btnNonSalvare: $("#btn-non-salvare"),
     salvaConferma: $("#salva-conferma"),
     btnRiprova: $("#btn-riprova"),
     btnNuoveParole: $("#btn-nuove-parole"),
     btnRisultatiEsci: $("#btn-risultati-esci"),
   };
 
-  /** Stato della partita in corso */
+  /** Stato della partita in corso (gioco 1 o gioco 2) */
   let stato = null;
   let timerIntervalId = null;
 
@@ -56,6 +75,12 @@
       [copia[i], copia[j]] = [copia[j], copia[i]];
     }
     return copia;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
   }
 
   // ---------- Salvataggio record (localStorage) ----------
@@ -99,7 +124,6 @@
   }
 
   // Salva il tempo solo se e' un nuovo record per quel bambino in quel gioco.
-  // Ritorna { nuovoRecord: bool, precedente: numero|null }
   function salvaRecordSeMigliore(gameId, nome, tempoMs) {
     const records = leggiRecords();
     if (!records[gameId]) records[gameId] = {};
@@ -145,9 +169,7 @@
       card.style.setProperty("--gioco-colore", gioco.colore);
 
       const classifica = gioco.attivo ? classificaGioco(gioco.id) : [];
-      const classificaHtml = gioco.attivo
-        ? renderClassificaHtml(classifica)
-        : "";
+      const classificaHtml = gioco.attivo ? renderClassificaHtml(classifica) : "";
 
       card.innerHTML = `
         <button class="gioco-card__avvia" ${gioco.attivo ? "" : "disabled"}>
@@ -160,7 +182,7 @@
 
       if (gioco.attivo) {
         $(".gioco-card__avvia", card).addEventListener("click", () =>
-          avviaGioco(gioco.id)
+          avviaGiocoDaHome(gioco.id)
         );
       }
 
@@ -187,15 +209,54 @@
     return `<ol class="classifica">${righe}</ol>`;
   }
 
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
+  function avviaGiocoDaHome(gameId) {
+    const gioco = GAMES.find((g) => g.id === gameId);
+    if (!gioco || !gioco.attivo) return;
+    if (gioco.tipo === "abbinamento") avviaAbbinamento(gameId);
+    else avviaLettura(gameId);
   }
 
-  // ---------- Partita ----------
+  // ---------- Cronometro (condiviso tra i due giochi) ----------
 
-  function avviaGioco(gameId) {
+  function tempoTrascorsoMs() {
+    if (!stato) return 0;
+    const inCorsoMs = stato.inCorso ? performance.now() - stato.inizioSegmento : 0;
+    return stato.accumulatoMs + inCorsoMs;
+  }
+
+  function aggiornaDisplayCronometro() {
+    if (!stato || !stato.cronometroEl) return;
+    stato.cronometroEl.textContent = formattaTempo(tempoTrascorsoMs());
+  }
+
+  function avviaCronometro() {
+    if (!stato || stato.inCorso) return;
+    stato.inCorso = true;
+    stato.inizioSegmento = performance.now();
+    aggiornaDisplayCronometro();
+    timerIntervalId = setInterval(aggiornaDisplayCronometro, 100);
+    if (stato.tipo === "lettura") el.btnPausa.textContent = "⏸️ Pausa";
+  }
+
+  function pausaCronometro() {
+    if (!stato || !stato.inCorso) return;
+    stato.accumulatoMs += performance.now() - stato.inizioSegmento;
+    stato.inCorso = false;
+    stato.inizioSegmento = null;
+    clearInterval(timerIntervalId);
+    aggiornaDisplayCronometro();
+    if (stato.tipo === "lettura") el.btnPausa.textContent = "▶️ Riprendi";
+  }
+
+  function togglePausa() {
+    if (!stato || stato.tipo !== "lettura") return;
+    if (stato.inCorso) pausaCronometro();
+    else avviaCronometro();
+  }
+
+  // ---------- GIOCO 1: Leggi bisillabe piane semplici ----------
+
+  function avviaLettura(gameId) {
     const gioco = GAMES.find((g) => g.id === gameId);
     const pool = GAME_DATA[gameId];
     if (!gioco || !gioco.attivo || !pool) return;
@@ -204,17 +265,19 @@
 
     stato = {
       gameId,
-      gioco,
+      tipo: "lettura",
       parole,
       accumulatoMs: 0,
       inCorso: false,
       inizioSegmento: null,
+      cronometroEl: el.cronometro,
     };
 
     el.nomeGioco.textContent = `${gioco.emoji} ${gioco.titolo}`;
+    el.cronometro.textContent = formattaTempo(0);
     renderParoleGriglia(parole);
     mostraSchermo("gioco");
-    avviaCronometro();
+    avviaCountdownESfocatura(() => avviaCronometro());
   }
 
   function renderParoleGriglia(parole) {
@@ -230,60 +293,199 @@
     });
   }
 
-  // ---------- Cronometro ----------
-
-  function tempoTrascorsoMs() {
-    if (!stato) return 0;
-    const inCorsoMs = stato.inCorso ? performance.now() - stato.inizioSegmento : 0;
-    return stato.accumulatoMs + inCorsoMs;
+  function impostaBottoniLettura(abilitati) {
+    el.btnPausa.disabled = !abilitati;
+    el.btnRicomincia.disabled = !abilitati;
+    el.btnNuovaSfida.disabled = !abilitati;
+    el.btnFine.disabled = !abilitati;
+    // btn-esci resta sempre cliccabile
   }
 
-  function aggiornaDisplayCronometro() {
-    el.cronometro.textContent = formattaTempo(tempoTrascorsoMs());
+  function avviaCountdownESfocatura(dopo) {
+    el.paroleGriglia.classList.add("sfocato");
+    el.countdownOverlay.classList.add("attivo");
+    impostaBottoniLettura(false);
+
+    let i = 0;
+    function passo() {
+      if (i >= COUNTDOWN_STEPS.length) {
+        el.countdownOverlay.classList.remove("attivo");
+        el.paroleGriglia.classList.remove("sfocato");
+        impostaBottoniLettura(true);
+        dopo();
+        return;
+      }
+      el.countdownTesto.textContent = COUNTDOWN_STEPS[i];
+      el.countdownTesto.style.animation = "none";
+      void el.countdownTesto.offsetWidth;
+      el.countdownTesto.style.animation = "";
+      i++;
+      setTimeout(passo, COUNTDOWN_STEP_MS);
+    }
+    passo();
   }
 
-  function avviaCronometro() {
-    if (!stato || stato.inCorso) return;
-    stato.inCorso = true;
-    stato.inizioSegmento = performance.now();
-    aggiornaDisplayCronometro();
-    timerIntervalId = setInterval(aggiornaDisplayCronometro, 100);
-    el.btnPausa.textContent = "⏸️ Pausa";
-  }
-
-  function pausaCronometro() {
-    if (!stato || !stato.inCorso) return;
-    stato.accumulatoMs += performance.now() - stato.inizioSegmento;
-    stato.inCorso = false;
-    stato.inizioSegmento = null;
+  function ricominciaLettura() {
+    if (!stato || stato.tipo !== "lettura") return;
     clearInterval(timerIntervalId);
-    aggiornaDisplayCronometro();
-    el.btnPausa.textContent = "▶️ Riprendi";
-  }
-
-  function togglePausa() {
-    if (!stato) return;
-    if (stato.inCorso) pausaCronometro();
-    else avviaCronometro();
-  }
-
-  function ricominciaStesseParole() {
-    if (!stato) return;
     stato.accumulatoMs = 0;
     stato.inCorso = false;
     stato.inizioSegmento = null;
-    clearInterval(timerIntervalId);
     el.cronometro.textContent = formattaTempo(0);
     el.btnPausa.textContent = "⏸️ Pausa";
+    renderParoleGriglia(stato.parole);
     mostraSchermo("gioco");
-    avviaCronometro();
+    avviaCountdownESfocatura(() => avviaCronometro());
+  }
+
+  function nuovaSfidaLettura() {
+    if (!stato) return;
+    avviaLettura(stato.gameId);
   }
 
   function finisciLettura() {
-    if (!stato) return;
+    if (!stato || stato.tipo !== "lettura") return;
     if (stato.inCorso) pausaCronometro();
     mostraRisultati();
   }
+
+  // ---------- GIOCO 2: Combina bisillabe ----------
+
+  function avviaAbbinamento(gameId) {
+    const gioco = GAMES.find((g) => g.id === gameId);
+    const pool = GAME_DATA[gameId];
+    if (!gioco || !gioco.attivo || !pool) return;
+
+    const parole = mescola(pool).slice(0, PAROLE_PER_PARTITA);
+    const coppie = parole.map((p, i) => {
+      const parti = p.sillabe.split("-");
+      return {
+        id: "c" + i,
+        parola: p.parola,
+        prima: parti[0],
+        seconda: parti.slice(1).join("-"),
+      };
+    });
+
+    stato = {
+      gameId,
+      tipo: "abbinamento",
+      coppie,
+      coppieTrovate: 0,
+      selezione: null,
+      bloccato: false,
+      accumulatoMs: 0,
+      inCorso: false,
+      inizioSegmento: null,
+      cronometroEl: el.abbinaCronometro,
+    };
+
+    el.abbinaCronometro.textContent = formattaTempo(0);
+    el.abbinaMessaggio.textContent = "";
+    renderColonneAbbina(coppie);
+    mostraSchermo("abbina");
+    avviaCronometro();
+  }
+
+  function renderColonneAbbina(coppie) {
+    const ordineSinistra = mescola(coppie);
+    const ordineDestra = mescola(coppie);
+
+    el.abbinaSinistra.innerHTML = "";
+    el.abbinaDestra.innerHTML = "";
+
+    ordineSinistra.forEach((c) => {
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "abbina-tile";
+      tile.textContent = c.prima;
+      tile.addEventListener("click", () => gestisciClickAbbina(c.id, "sx", tile));
+      el.abbinaSinistra.appendChild(tile);
+    });
+
+    ordineDestra.forEach((c) => {
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "abbina-tile";
+      tile.textContent = c.seconda;
+      tile.addEventListener("click", () => gestisciClickAbbina(c.id, "dx", tile));
+      el.abbinaDestra.appendChild(tile);
+    });
+  }
+
+  function gestisciClickAbbina(id, lato, elemento) {
+    if (!stato || stato.tipo !== "abbinamento" || stato.bloccato) return;
+    if (elemento.classList.contains("corretta")) return;
+
+    if (!stato.selezione) {
+      stato.selezione = { lato, id, elemento };
+      elemento.classList.add("selezionata");
+      return;
+    }
+
+    if (stato.selezione.lato === lato) {
+      stato.selezione.elemento.classList.remove("selezionata");
+      if (stato.selezione.elemento === elemento) {
+        stato.selezione = null;
+        return;
+      }
+      stato.selezione = { lato, id, elemento };
+      elemento.classList.add("selezionata");
+      return;
+    }
+
+    const primaScelta = stato.selezione;
+    stato.selezione = null;
+
+    if (primaScelta.id === id) {
+      primaScelta.elemento.classList.remove("selezionata");
+      primaScelta.elemento.classList.add("corretta");
+      primaScelta.elemento.disabled = true;
+      elemento.classList.add("corretta");
+      elemento.disabled = true;
+      el.abbinaMessaggio.textContent = "";
+      stato.coppieTrovate++;
+
+      if (stato.coppieTrovate >= stato.coppie.length) {
+        pausaCronometro();
+        mostraRisultati();
+      }
+    } else {
+      stato.bloccato = true;
+      primaScelta.elemento.classList.remove("selezionata");
+      primaScelta.elemento.classList.add("errore");
+      elemento.classList.add("errore");
+      el.abbinaMessaggio.textContent = "❌ Non è una coppia, riprova!";
+      setTimeout(() => {
+        primaScelta.elemento.classList.remove("errore");
+        elemento.classList.remove("errore");
+        stato.bloccato = false;
+      }, 500);
+    }
+  }
+
+  function ricominciaAbbinamento() {
+    if (!stato || stato.tipo !== "abbinamento") return;
+    clearInterval(timerIntervalId);
+    stato.accumulatoMs = 0;
+    stato.inCorso = false;
+    stato.inizioSegmento = null;
+    stato.coppieTrovate = 0;
+    stato.selezione = null;
+    stato.bloccato = false;
+    el.abbinaCronometro.textContent = formattaTempo(0);
+    el.abbinaMessaggio.textContent = "";
+    renderColonneAbbina(stato.coppie);
+    mostraSchermo("abbina");
+    avviaCronometro();
+  }
+
+  function nuovaSfidaAbbinamento() {
+    if (!stato) return;
+    avviaAbbinamento(stato.gameId);
+  }
+
+  // ---------- Uscita dal gioco ----------
 
   function esciDalGioco() {
     clearInterval(timerIntervalId);
@@ -292,7 +494,7 @@
     mostraSchermo("home");
   }
 
-  // ---------- Risultati / salvataggio ----------
+  // ---------- Risultati / salvataggio (condivisi) ----------
 
   function mostraRisultati() {
     const tempoFinale = tempoTrascorsoMs();
@@ -351,9 +553,21 @@
     }
   }
 
-  function nuovaSequenza() {
+  function nonSalvareRecord() {
+    el.salvaConferma.textContent = "Ok, tempo non salvato.";
+    el.salvaConferma.style.color = "var(--ink)";
+  }
+
+  function ricominciaDaRisultati() {
     if (!stato) return;
-    avviaGioco(stato.gameId);
+    if (stato.tipo === "lettura") ricominciaLettura();
+    else ricominciaAbbinamento();
+  }
+
+  function nuovaSfidaDaRisultati() {
+    if (!stato) return;
+    if (stato.tipo === "lettura") nuovaSfidaLettura();
+    else nuovaSfidaAbbinamento();
   }
 
   // ---------- Avvio ----------
@@ -362,14 +576,23 @@
     renderHome();
     mostraSchermo("home");
 
+    // gioco 1
     el.btnPausa.addEventListener("click", togglePausa);
-    el.btnRicomincia.addEventListener("click", ricominciaStesseParole);
+    el.btnRicomincia.addEventListener("click", ricominciaLettura);
+    el.btnNuovaSfida.addEventListener("click", nuovaSfidaLettura);
     el.btnFine.addEventListener("click", finisciLettura);
     el.btnEsci.addEventListener("click", esciDalGioco);
 
+    // gioco 2
+    el.abbinaBtnRicomincia.addEventListener("click", ricominciaAbbinamento);
+    el.abbinaBtnNuovaSfida.addEventListener("click", nuovaSfidaAbbinamento);
+    el.abbinaBtnEsci.addEventListener("click", esciDalGioco);
+
+    // risultati (condivisi)
     el.btnSalva.addEventListener("click", salvaRecordCorrente);
-    el.btnRiprova.addEventListener("click", ricominciaStesseParole);
-    el.btnNuoveParole.addEventListener("click", nuovaSequenza);
+    el.btnNonSalvare.addEventListener("click", nonSalvareRecord);
+    el.btnRiprova.addEventListener("click", ricominciaDaRisultati);
+    el.btnNuoveParole.addEventListener("click", nuovaSfidaDaRisultati);
     el.btnRisultatiEsci.addEventListener("click", esciDalGioco);
   }
 

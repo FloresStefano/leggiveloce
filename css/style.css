@@ -215,13 +215,51 @@ button {
   color: var(--accent-dark);
 }
 
+.gioco-area {
+  position: relative;
+  flex: 1;
+  display: flex;
+  margin-bottom: 24px;
+}
+
 .parole-griglia {
   flex: 1;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 14px;
   align-content: start;
-  margin-bottom: 24px;
+  transition: filter 0.2s ease;
+}
+
+.parole-griglia.sfocato {
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.countdown-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.countdown-overlay.attivo {
+  display: flex;
+}
+
+.countdown-testo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(4rem, 16vw, 8rem);
+  color: var(--accent-dark);
+  text-shadow: 0 6px 0 rgba(255, 255, 255, 0.9), 0 10px 24px rgba(51, 48, 46, 0.25);
+  animation: countdown-pop 0.35s ease;
+}
+
+@keyframes countdown-pop {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .parola-tile {
@@ -264,6 +302,84 @@ button {
 .btn-fine {
   font-size: 1.25rem;
   padding: 18px 36px;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- COMBINA BISILLABE ---------- */
+
+.abbina-istruzioni {
+  text-align: center;
+  opacity: 0.8;
+  margin: 0 0 16px;
+}
+
+.abbina-colonne {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 3vw, 32px);
+  align-content: start;
+}
+
+.abbina-colonna {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.abbina-tile {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.2rem, 3.5vw, 1.7rem);
+  background: var(--card-bg);
+  border: 3px solid transparent;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: clamp(10px, 2.5vw, 16px);
+  min-height: 56px;
+  text-align: center;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.abbina-tile:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.abbina-tile.selezionata {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.abbina-tile.corretta {
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success);
+  cursor: default;
+  opacity: 0.75;
+}
+
+.abbina-tile.errore {
+  border-color: var(--error);
+  background: var(--error-soft);
+  animation: abbina-shake 0.35s ease;
+}
+
+@keyframes abbina-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.abbina-messaggio {
+  text-align: center;
+  min-height: 1.4em;
+  font-weight: 700;
+  color: var(--error);
 }
 
 /* ---------- RISULTATI ---------- */
@@ -334,6 +450,13 @@ button {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--ink);
+}
+
+.salva-record__azioni {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .salva-conferma {
