@@ -5,7 +5,7 @@ serie di piccoli giochi per allenare la lettura dei bambini. Nessun
 account, nessun server: i record vengono salvati nel browser del
 dispositivo (`localStorage`).
 
-## 🎮 Gioco 1: "Leggi bisillabe piane semplici"
+## 🎮 Gioco 1: "Bisillabe"
 
 1. Si entra nel gioco: le 10 parole (scelte a caso da un elenco di parole
    reali bisillabe piane, singolare e plurale, es. "casa"/"case") sono
@@ -49,9 +49,9 @@ I giochi 1 e 2 condividono lo stesso elenco di parole
 (visibile in home, sotto ogni gioco attivo, con il tempo migliore di ogni
 bambino).
 
-## 📚 Gioco 3: "Leggi trisillabe piane"
+## 📚 Gioco 3: "Trisillabe"
 
-Stessa identica meccanica del Gioco 1 ("Leggi bisillabe piane semplici"):
+Stessa identica meccanica del Gioco 1 ("Bisillabe"):
 sfocatura + conto alla rovescia "3, 2, 1, VIA!", cronometro, pausa/riprendi,
 ricomincia, nuova sfida, FINE con scelta di salvare o non salvare il
 record. L'unica differenza è la lista di parole: invece di bisillabe usa
@@ -102,25 +102,30 @@ sempre minuscole e senza punteggiatura.
    della parola (es. "ma", "ti", "ta"). Il bambino ne sceglie una: quella
    è la sillaba su cui giocherà per tutta la partita (non si può più
    cambiare, per non confondersi a metà).
-3. Più sotto ci sono 21 parole trisillabe, anche loro piccole e compatte
-   e senza suggerimento sillabico: 7 condividono la prima sillaba della
-   parola target, 7 la seconda, 7 la terza. Il bambino deve leggere e
-   trovare le 7 che condividono proprio la sillaba scelta al punto 2, nel
+3. Più sotto ci sono 15 parole trisillabe, anche loro piccole e compatte
+   e senza suggerimento sillabico: 5 condividono la prima sillaba della
+   parola target, 5 la seconda, 5 la terza. Il bambino deve leggere e
+   trovare le 5 che condividono proprio la sillaba scelta al punto 2, nel
    minor tempo possibile.
 4. Se sbaglia, il blocchetto diventa rosso; ci si clicca sopra di nuovo
    per "correggersi" e farlo tornare normale, e si può riprovare. Se la
    scelta è giusta il blocchetto diventa verde e resta bloccato. Trovate
-   tutte e 7, il cronometro si ferma da solo e si passa alla schermata
+   tutte e 5, il cronometro si ferma da solo e si passa alla schermata
    risultati (salva/non salvare il record, come sempre).
 
 Le 3 parole target attuali (matita, cucina, panino) e le loro parole
 associate si trovano in `js/games/parola-a-fette.js`, scelte, sillabate
 e verificate (con uno script) in modo che ogni parola condivida *una
-sola* sillaba con la parola target, mai due, per evitare ambiguità.
-Trovare 7 parole "pulite" per ognuna delle 3 posizioni di una parola
-richiede molta più cura che riempire un semplice elenco, per questo si
-parte con solo 3 parole target: aggiungerne altre in futuro è possibile
-seguendo lo stesso schema (e lo stesso script di verifica).
+sola* sillaba con la parola target, mai due, per evitare ambiguità. Il
+file dati ha 7 parole "pulite" verificate per ciascuna delle 3 posizioni
+(21 in tutto per parola target), ma ad ogni partita (e ad ogni "Nuova
+sfida") ne vengono mostrate solo 5 a caso per posizione — 15 in tutto —
+così l'obiettivo è uniforme con il Gioco 6 e ogni tentativo può proporre
+una combinazione leggermente diversa. Trovare parole "pulite" per
+ognuna delle 3 posizioni di una parola richiede molta più cura che
+riempire un semplice elenco, per questo si parte con solo 3 parole
+target: aggiungerne altre in futuro è possibile seguendo lo stesso
+schema (e lo stesso script di verifica).
 
 **Scelte fatte in autonomia, da confermare o correggere:** non ho
 aggiunto il tasto Pausa a questo gioco (come "Combina bisillabe", che è
@@ -137,30 +142,27 @@ volta fatta, resta fissa per tutta la partita.
 2. Il bambino ne sceglie una: quella è la lettera su cui giocherà per
    tutta la partita (non si può più cambiare, come la sillaba in "Parola a
    fette").
-3. Più sotto ci sono 24 parole (bisillabe o trisillabe), anche loro
-   piccole e compatte e senza suggerimento sillabico: 6 parole per ognuna
+3. Più sotto ci sono 20 parole (bisillabe o trisillabe), anche loro
+   piccole e compatte e senza suggerimento sillabico: 5 parole per ognuna
    delle 4 lettere. Ogni parola contiene *una sola* delle 4 lettere
    speculari (mai due insieme, per non creare ambiguità), come iniziale o
-   all'interno della parola. Il bambino deve leggere e trovare le 6 parole
+   all'interno della parola. Il bambino deve leggere e trovare le 5 parole
    che contengono proprio la lettera scelta, nel minor tempo possibile.
 4. Se sbaglia, il blocchetto diventa rosso; ci si clicca sopra di nuovo
    per "correggersi" e farlo tornare normale, e si può riprovare. Se la
    scelta è giusta il blocchetto diventa verde e resta bloccato. Trovate
-   tutte e 6, il cronometro si ferma da solo e si passa alla schermata
+   tutte e 5, il cronometro si ferma da solo e si passa alla schermata
    risultati (salva/non salvare il record, come sempre).
 
 Le parole si trovano in `js/games/lettere-speculari.js`, raggruppate per
 lettera (8-11 parole disponibili per lettera, verificate una per una in
 modo che ognuna contenga solo quella lettera speculare): ad ogni partita
-(e ad ogni "Nuova sfida") ne vengono pescate 6 a caso per lettera, per un
-totale di 24 parole diverse ogni volta.
+(e ad ogni "Nuova sfida") ne vengono pescate 5 a caso per lettera, per un
+totale di 20 parole diverse ogni volta. (Il gioco era partito con 6
+parole/lettera da trovare; l'obiettivo è stato uniformato a 5, come nel
+Gioco 5, su richiesta esplicita.)
 
 **Scelte fatte in autonomia, da confermare o correggere:**
-- la richiesta indicava "6 parole per ciascun tipo" (24 parole ÷ 4
-  lettere = 6) ma più avanti parlava di trovare "le 4 paroline": ho
-  considerato quest'ultima un refuso e implementato **6** parole da
-  trovare per lettera, coerente con il conteggio "24 parole... 6 per
-  ciascun tipo" — da confermare.
 - le 4 lettere sono sempre mostrate nello stesso ordine fisso b-d-p-q (non
   mescolate), per dare al bambino un riferimento visivo costante mentre
   si allena a distinguerle.

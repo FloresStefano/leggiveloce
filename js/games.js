@@ -9,9 +9,9 @@
  * - "frase": stessa meccanica di "lettura" ma con un'unica frase completa
  *   (6-15 parole, ordine fisso) al posto di 10 parole casuali (Gioco 4)
  * - "fette": parola target + scelta di una delle sue 3 sillabe + ricerca
- *   delle 7 parole che condividono quella sillaba, con cronometro e conto
+ *   delle 5 parole che condividono quella sillaba, con cronometro e conto
  *   alla rovescia (Gioco 5)
- * - "lettere": scelta di una lettera speculare (b/d/p/q) + ricerca delle 6
+ * - "lettere": scelta di una lettera speculare (b/d/p/q) + ricerca delle 5
  *   parole che contengono proprio quella lettera, con cronometro e conto
  *   alla rovescia (Gioco 6)
  *
@@ -23,7 +23,7 @@
 const GAMES = [
   {
     id: "bisillabe-piane-semplici",
-    titolo: "Leggi bisillabe piane semplici",
+    titolo: "Bisillabe",
     emoji: "🔤",
     colore: "#3fb984",
     descrizione: "10 parole a due sillabe: leggile tutte più veloce che puoi.",
@@ -41,7 +41,7 @@ const GAMES = [
   },
   {
     id: "trisillabe-piane",
-    titolo: "Leggi trisillabe piane",
+    titolo: "Trisillabe",
     emoji: "📚",
     colore: "#e0a530",
     descrizione: "10 parole a tre sillabe: leggile tutte più veloce che puoi.",
@@ -62,7 +62,7 @@ const GAMES = [
     titolo: "Parola a fette",
     emoji: "🍕",
     colore: "#1fa5a5",
-    descrizione: "Scegli una sillaba e trova le 7 parole che la condividono, più veloce che puoi.",
+    descrizione: "Scegli una sillaba e trova le 5 parole che la condividono, più veloce che puoi.",
     tipo: "fette",
     attivo: true,
   },
@@ -71,7 +71,7 @@ const GAMES = [
     titolo: "Lettere speculari",
     emoji: "🔁",
     colore: "#d1495b",
-    descrizione: "Scegli una lettera (b/d/p/q) e trova le 6 parole che la contengono, più veloce che puoi.",
+    descrizione: "Scegli una lettera (b/d/p/q) e trova le 5 parole che la contengono, più veloce che puoi.",
     tipo: "lettere",
     attivo: true,
   },

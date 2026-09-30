@@ -10,9 +10,11 @@
   const COUNTDOWN_STEP_MS = 700;
 
   // Collega ogni gioco attivo al proprio elenco di parole.
-  const PAROLE_PER_PARTITA_FETTE = 7;
+  // Gioco 5 e Gioco 6 sono uniformati allo stesso obiettivo: 5 parole da
+  // trovare per categoria (non piu' 7 per "fette" e 6 per "lettere").
+  const PAROLE_PER_PARTITA_FETTE = 5;
   const LETTERE_SPECULARI = ["b", "d", "p", "q"];
-  const PAROLE_PER_LETTERA = 6;
+  const PAROLE_PER_LETTERA = 5;
 
   const GAME_DATA = {
     "bisillabe-piane-semplici": PAROLE_BISILLABE_PIANE,
@@ -564,17 +566,32 @@
     );
   }
 
+  // Pesca 5 parole a caso per ciascuna delle 3 posizioni di sillaba dal
+  // pool della parola target (che ne ha 7 per posizione): 15 parole in
+  // tutto, cosi' anche le due posizioni non scelte restano equilibrate a
+  // 5 come quella scelta.
+  function selezionaParoleFette(fetta) {
+    const risultato = [];
+    [1, 2, 3].forEach((posizione) => {
+      const diQuestaPosizione = fetta.parole.filter((p) => p.posizione === posizione);
+      risultato.push(...mescola(diQuestaPosizione).slice(0, PAROLE_PER_PARTITA_FETTE));
+    });
+    return risultato;
+  }
+
   function avviaFette(gameId) {
     const gioco = GAMES.find((g) => g.id === gameId);
     const pool = GAME_DATA[gameId];
     if (!gioco || !gioco.attivo || !pool || !pool.length) return;
 
     const fetta = pool[Math.floor(Math.random() * pool.length)];
+    const paroleSelezionate = selezionaParoleFette(fetta);
 
     stato = {
       gameId,
       tipo: "fette",
       fetta,
+      paroleSelezionate,
       sillabaScelta: null,
       trovate: 0,
       accumulatoMs: 0,
@@ -585,12 +602,12 @@
 
     el.fetteCronometro.textContent = formattaTempo(0);
     el.fetteMessaggio.textContent = "";
-    renderFette(fetta);
+    renderFette(fetta, paroleSelezionate);
     mostraSchermo("fette");
     avviaCountdownFette(() => avviaCronometro());
   }
 
-  function renderFette(fetta) {
+  function renderFette(fetta, paroleSelezionate) {
     const parti = fetta.sillabe.split("-");
 
     el.fetteParolaTile.innerHTML = `
@@ -609,7 +626,7 @@
       el.fetteSillabeScelta.appendChild(tile);
     });
 
-    const paroleMescolate = mescola(fetta.parole);
+    const paroleMescolate = mescola(paroleSelezionate);
     el.fetteParoleGriglia.innerHTML = "";
     paroleMescolate.forEach((p) => {
       const tile = document.createElement("button");
@@ -675,7 +692,7 @@
     stato.trovate = 0;
     el.fetteCronometro.textContent = formattaTempo(0);
     el.fetteMessaggio.textContent = "";
-    renderFette(stato.fetta);
+    renderFette(stato.fetta, stato.paroleSelezionate);
     mostraSchermo("fette");
     avviaCountdownFette(() => avviaCronometro());
   }
