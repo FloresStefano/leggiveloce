@@ -65,17 +65,49 @@ singolare e plurale dove possibile. La lista si trova in
 `GAME_DATA` in `js/app.js`, senza bisogno di nuova logica (il `tipo` è
 `"lettura"`, lo stesso del Gioco 1).
 
+## 📝 Gioco 4: "Leggi una frase"
+
+Stessa identica meccanica del Gioco 1 e del Gioco 3 (sfocatura + conto
+alla rovescia, cronometro, pausa/riprendi, ricomincia, nuova sfida, FINE
+con salva/non salvare record) ma invece di 10 parole casuali mostra
+**un'unica frase completa**, scelta a caso da un elenco di frasi pronte,
+scomposta negli stessi "blocchetti" (parola in grande + sillabe in
+piccolo) usati dagli altri giochi di lettura, nello stesso ordine in cui
+vanno lette (l'ordine non viene mai rimescolato). Ogni frase ha tra 6 e
+15 parole ed è pensata per avere senso compiuto, usando soprattutto le
+stesse bisillabe/trisillabe già note al bambino più semplici verbi
+elementari e congiunzioni.
+
+Per aiutare il bambino a riconoscere le diverse parti della frase, due
+blocchetti hanno un aspetto leggermente diverso dal solito: i **verbi**
+hanno un colore diverso (viola, invece del solito colore del testo), e
+le **congiunzioni** (es. "e", "ma", "mentre") non mostrano il
+suggerimento sillabico sotto, perché non serve. **Ricomincia** rilegge
+la stessa frase da capo, **nuova sfida** ne sceglie una diversa a caso
+dall'elenco. Le frasi si trovano in `js/games/frasi.js`; per aggiungerne
+altre basta aggiungere un nuovo elenco di blocchetti seguendo lo stesso
+formato.
+
+**Scelte fatte in autonomia, da confermare o correggere:** la prima
+parola di ogni frase è maiuscola e l'ultima ha il punto finale (come in
+una frase scritta), a differenza degli altri giochi dove le parole sono
+sempre minuscole e senza punteggiatura; gli articoli e le preposizioni
+(es. "il", "la", "nel") mostrano comunque il suggerimento sillabico
+(anche se banale, uguale alla parola stessa) perché la richiesta di
+saltare il suggerimento riguardava solo le congiunzioni.
+
 Altri giochi compariranno in home come schede "Prossimamente" (disattive)
 finché non verranno definiti e attivati.
 
 ## 🗂️ Struttura del progetto
 
 ```
-index.html                             home, gioco 1, gioco 2, gioco 3, risultati
+index.html                             home, gioco 1, gioco 2, gioco 3, gioco 4, risultati
 css/style.css                          stile grafico, responsive, per tablet
 js/games.js                            elenco dei giochi (id, tipo, attivo/non attivo)
 js/games/bisillabe-piane-semplici.js   le parole usate dai giochi 1 e 2
 js/games/trisillabe-piane.js           le parole usate dal gioco 3
+js/games/frasi.js                      le frasi usate dal gioco 4
 js/app.js                              logica: cronometro, tutte le meccaniche, record
 manifest.json                          per "Aggiungi a Home" su tablet/telefono
 icon.svg                               icona dell'app
@@ -85,19 +117,21 @@ Nessun build step: file statici, pubblicati gratis con **GitHub Pages**.
 
 ## ➕ Aggiungere un nuovo gioco
 
-1. Se serve un nuovo elenco di parole, creare `js/games/<id-gioco>.js`
-   (stesso formato di `bisillabe-piane-semplici.js`: `{ parola, sillabe }`)
-   e aggiungere `<script src="js/games/<id-gioco>.js">` in `index.html`
-   prima di `js/app.js`.
-2. Aggiungere una voce in `js/games.js` con `attivo: true` e un `tipo`
-   (`"lettura"`, `"abbinamento"`, o uno nuovo se la meccanica è diversa).
-3. Collegare l'id del gioco al suo elenco parole in `GAME_DATA` dentro
+1. Se serve un nuovo elenco di parole (o frasi), creare
+   `js/games/<id-gioco>.js` (stesso formato di
+   `bisillabe-piane-semplici.js`: `{ parola, sillabe }`, oppure di
+   `frasi.js` per una lista di frasi) e aggiungere
+   `<script src="js/games/<id-gioco>.js">` in `index.html` prima di
    `js/app.js`.
-4. Se il `tipo` è nuovo (non "lettura" né "abbinamento"), va scritta la
-   logica corrispondente in `js/app.js` (una nuova schermata in
-   `index.html` + le funzioni avvia/ricomincia/nuova sfida per quel
-   gioco) — `js/app.js` non è generico oltre le due meccaniche già
-   presenti.
+2. Aggiungere una voce in `js/games.js` con `attivo: true` e un `tipo`
+   (`"lettura"`, `"abbinamento"`, `"frase"`, o uno nuovo se la meccanica
+   è diversa).
+3. Collegare l'id del gioco al suo elenco parole/frasi in `GAME_DATA`
+   dentro `js/app.js`.
+4. Se il `tipo` è nuovo (non "lettura", "abbinamento" né "frase"), va
+   scritta la logica corrispondente in `js/app.js` (una nuova schermata
+   in `index.html` + le funzioni avvia/ricomincia/nuova sfida per quel
+   gioco) — `js/app.js` non è generico oltre le meccaniche già presenti.
 
 ## 🖥️ Provarla in locale
 

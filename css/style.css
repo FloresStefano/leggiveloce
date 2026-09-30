@@ -9,6 +9,8 @@
   --success-soft: #d9f5e9;
   --error: #e0563f;
   --error-soft: #fde3dd;
+  --verbo: #7c5cbf;
+  --verbo-soft: #e7defa;
   --radius-lg: 28px;
   --radius-md: 18px;
   --radius-sm: 12px;
@@ -289,6 +291,20 @@ button {
   opacity: 0.75;
   letter-spacing: 0.03em;
   user-select: none;
+}
+
+/* Blocchetto verbo (usato nel gioco "Leggi una frase"): colore diverso
+   per aiutare il bambino a riconoscere i verbi nella frase. */
+.parola-tile--verbo {
+  border: 3px solid var(--verbo-soft);
+}
+
+.parola-tile--verbo .parola-tile__parola {
+  color: var(--verbo);
+}
+
+.parola-tile--verbo .parola-tile__sillabe {
+  color: var(--verbo);
 }
 
 .gioco__azioni {

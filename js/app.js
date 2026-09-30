@@ -14,6 +14,7 @@
     "bisillabe-piane-semplici": PAROLE_BISILLABE_PIANE,
     "combina-bisillabe": PAROLE_BISILLABE_PIANE,
     "trisillabe-piane": PAROLE_TRISILLABE_PIANE,
+    "leggi-frase": FRASI,
   };
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
@@ -258,12 +259,24 @@
 
   // ---------- GIOCO 1: Leggi bisillabe piane semplici ----------
 
+  // Sceglie le parole/blocchetti da mostrare per un gioco di tipo "lettura"
+  // o "frase": per "frase" viene scelta un'unica frase intera (ordine fisso,
+  // lunghezza propria della frase), per "lettura" un set di N parole casuali.
+  function selezionaParoleGioco(gioco) {
+    const pool = GAME_DATA[gioco.id];
+    if (!pool) return null;
+    if (gioco.tipo === "frase") {
+      const frase = pool[Math.floor(Math.random() * pool.length)];
+      return frase.slice();
+    }
+    return mescola(pool).slice(0, PAROLE_PER_PARTITA_LETTURA);
+  }
+
   function avviaLettura(gameId) {
     const gioco = GAMES.find((g) => g.id === gameId);
-    const pool = GAME_DATA[gameId];
-    if (!gioco || !gioco.attivo || !pool) return;
-
-    const parole = mescola(pool).slice(0, PAROLE_PER_PARTITA_LETTURA);
+    if (!gioco || !gioco.attivo) return;
+    const parole = selezionaParoleGioco(gioco);
+    if (!parole) return;
 
     stato = {
       gameId,
@@ -287,9 +300,16 @@
     parole.forEach((p) => {
       const tile = document.createElement("div");
       tile.className = "parola-tile";
+      if (p.tipo === "verbo") tile.classList.add("parola-tile--verbo");
+
+      // Le congiunzioni non hanno il suggerimento sillabico.
+      const sillabeHtml = p.sillabe
+        ? `<span class="parola-tile__sillabe">${escapeHtml(p.sillabe)}</span>`
+        : "";
+
       tile.innerHTML = `
         <span class="parola-tile__parola">${escapeHtml(p.parola)}</span>
-        <span class="parola-tile__sillabe">${escapeHtml(p.sillabe)}</span>
+        ${sillabeHtml}
       `;
       el.paroleGriglia.appendChild(tile);
     });
