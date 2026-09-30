@@ -6,12 +6,12 @@
  * blocchetto e' un oggetto con:
  *   - parola: il testo mostrato in grande (la prima parola della frase e'
  *     maiuscola, l'ultima porta il punto finale, come in una frase scritta)
- *   - sillabe: la struttura sillabica mostrata in piccolo sotto la parola.
- *     Assente (o null) per le congiunzioni, che non hanno il suggerimento.
+ *   - sillabe: la struttura sillabica mostrata in piccolo sotto la parola
+ *     (sempre presente, anche per le congiunzioni).
  *   - tipo: "verbo" per i verbi (mostrati con un colore leggermente
- *     diverso), "congiunzione" per le congiunzioni (nessun suggerimento
- *     sillabico); omesso per le parole "normali" (nomi, articoli,
- *     preposizioni, aggettivi bisillabi o trisillabi).
+ *     diverso), "congiunzione" per le congiunzioni (solo per riferimento,
+ *     non cambia l'aspetto); omesso per le parole "normali" (nomi,
+ *     articoli, preposizioni, aggettivi bisillabi o trisillabi).
  *
  * Frasi scelte, composte e sillabate a mano da Claude: ogni frase ha tra
  * 6 e 15 parole, di senso compiuto, usando per lo piu' le stesse
@@ -26,7 +26,7 @@ const FRASI = [
     { parola: "corre", sillabe: "cor-re", tipo: "verbo" },
     { parola: "nel", sillabe: "nel" },
     { parola: "prato", sillabe: "pra-to" },
-    { parola: "e", tipo: "congiunzione" },
+    { parola: "e", sillabe: "e", tipo: "congiunzione" },
     { parola: "gioca", sillabe: "gio-ca", tipo: "verbo" },
     { parola: "con", sillabe: "con" },
     { parola: "il", sillabe: "il" },
@@ -44,7 +44,7 @@ const FRASI = [
   [
     { parola: "Il", sillabe: "Il" },
     { parola: "leone", sillabe: "le-o-ne" },
-    { parola: "e", tipo: "congiunzione" },
+    { parola: "e", sillabe: "e", tipo: "congiunzione" },
     { parola: "la", sillabe: "la" },
     { parola: "giraffa", sillabe: "gi-raf-fa" },
     { parola: "camminano", sillabe: "cam-mi-na-no", tipo: "verbo" },
@@ -68,7 +68,7 @@ const FRASI = [
     { parola: "legge", sillabe: "leg-ge", tipo: "verbo" },
     { parola: "una", sillabe: "u-na" },
     { parola: "frase", sillabe: "fra-se" },
-    { parola: "e", tipo: "congiunzione" },
+    { parola: "e", sillabe: "e", tipo: "congiunzione" },
     { parola: "i", sillabe: "i" },
     { parola: "bambini", sillabe: "bam-bi-ni" },
     { parola: "ascoltano.", sillabe: "a-scol-ta-no", tipo: "verbo" },
@@ -88,7 +88,7 @@ const FRASI = [
     { parola: "indossa", sillabe: "in-dos-sa", tipo: "verbo" },
     { parola: "la", sillabe: "la" },
     { parola: "corona", sillabe: "co-ro-na" },
-    { parola: "e", tipo: "congiunzione" },
+    { parola: "e", sillabe: "e", tipo: "congiunzione" },
     { parola: "cammina", sillabe: "cam-mi-na", tipo: "verbo" },
     { parola: "nel", sillabe: "nel" },
     { parola: "castello.", sillabe: "ca-stel-lo" },
@@ -100,7 +100,7 @@ const FRASI = [
     { parola: "sopra", sillabe: "so-pra" },
     { parola: "il", sillabe: "il" },
     { parola: "mare", sillabe: "ma-re" },
-    { parola: "e", tipo: "congiunzione" },
+    { parola: "e", sillabe: "e", tipo: "congiunzione" },
     { parola: "il", sillabe: "il" },
     { parola: "vento", sillabe: "ven-to" },
     { parola: "soffia.", sillabe: "sof-fia", tipo: "verbo" },
@@ -111,7 +111,7 @@ const FRASI = [
     { parola: "giocano", sillabe: "gio-ca-no", tipo: "verbo" },
     { parola: "nel", sillabe: "nel" },
     { parola: "giardino", sillabe: "giar-di-no" },
-    { parola: "mentre", tipo: "congiunzione" },
+    { parola: "mentre", sillabe: "men-tre", tipo: "congiunzione" },
     { parola: "il", sillabe: "il" },
     { parola: "sole", sillabe: "so-le" },
     { parola: "splende.", sillabe: "splen-de", tipo: "verbo" },
@@ -122,7 +122,7 @@ const FRASI = [
     { parola: "guarda", sillabe: "guar-da", tipo: "verbo" },
     { parola: "la", sillabe: "la" },
     { parola: "luna", sillabe: "lu-na" },
-    { parola: "e", tipo: "congiunzione" },
+    { parola: "e", sillabe: "e", tipo: "congiunzione" },
     { parola: "ascolta", sillabe: "a-scol-ta", tipo: "verbo" },
     { parola: "il", sillabe: "il" },
     { parola: "vento", sillabe: "ven-to" },
@@ -136,7 +136,7 @@ const FRASI = [
     { parola: "racconta", sillabe: "rac-con-ta", tipo: "verbo" },
     { parola: "una", sillabe: "u-na" },
     { parola: "storia", sillabe: "sto-ria" },
-    { parola: "mentre", tipo: "congiunzione" },
+    { parola: "mentre", sillabe: "men-tre", tipo: "congiunzione" },
     { parola: "i", sillabe: "i" },
     { parola: "nipoti", sillabe: "ni-po-ti" },
     { parola: "ridono", sillabe: "ri-do-no", tipo: "verbo" },
@@ -157,11 +157,11 @@ const FRASI = [
     { parola: "veloce", sillabe: "ve-lo-ce" },
     { parola: "nel", sillabe: "nel" },
     { parola: "prato", sillabe: "pra-to" },
-    { parola: "mentre", tipo: "congiunzione" },
+    { parola: "mentre", sillabe: "men-tre", tipo: "congiunzione" },
     { parola: "il", sillabe: "il" },
     { parola: "cane", sillabe: "ca-ne" },
     { parola: "abbaia", sillabe: "ab-ba-ia", tipo: "verbo" },
-    { parola: "e", tipo: "congiunzione" },
+    { parola: "e", sillabe: "e", tipo: "congiunzione" },
     { parola: "la", sillabe: "la" },
     { parola: "gallina", sillabe: "gal-li-na" },
     { parola: "scappa.", sillabe: "scap-pa", tipo: "verbo" },
@@ -173,7 +173,7 @@ const FRASI = [
     { parola: "sopra", sillabe: "so-pra" },
     { parola: "i", sillabe: "i" },
     { parola: "fiori", sillabe: "fio-ri" },
-    { parola: "mentre", tipo: "congiunzione" },
+    { parola: "mentre", sillabe: "men-tre", tipo: "congiunzione" },
     { parola: "il", sillabe: "il" },
     { parola: "sole", sillabe: "so-le" },
     { parola: "splende", sillabe: "splen-de", tipo: "verbo" },
@@ -185,7 +185,7 @@ const FRASI = [
     { parola: "visita", sillabe: "vi-si-ta", tipo: "verbo" },
     { parola: "il", sillabe: "il" },
     { parola: "bambino", sillabe: "bam-bi-no" },
-    { parola: "e", tipo: "congiunzione" },
+    { parola: "e", sillabe: "e", tipo: "congiunzione" },
     { parola: "sorride.", sillabe: "sor-ri-de", tipo: "verbo" },
   ],
   [
@@ -195,7 +195,7 @@ const FRASI = [
     { parola: "nel", sillabe: "nel" },
     { parola: "mare", sillabe: "ma-re" },
     { parola: "gelido", sillabe: "ge-li-do" },
-    { parola: "mentre", tipo: "congiunzione" },
+    { parola: "mentre", sillabe: "men-tre", tipo: "congiunzione" },
     { parola: "la", sillabe: "la" },
     { parola: "balena", sillabe: "ba-le-na" },
     { parola: "canta", sillabe: "can-ta", tipo: "verbo" },
@@ -206,7 +206,7 @@ const FRASI = [
     { parola: "coniglio", sillabe: "co-ni-glio" },
     { parola: "salta", sillabe: "sal-ta", tipo: "verbo" },
     { parola: "veloce", sillabe: "ve-lo-ce" },
-    { parola: "ma", tipo: "congiunzione" },
+    { parola: "ma", sillabe: "ma", tipo: "congiunzione" },
     { parola: "la", sillabe: "la" },
     { parola: "lumaca", sillabe: "lu-ma-ca" },
     { parola: "cammina", sillabe: "cam-mi-na", tipo: "verbo" },
@@ -218,7 +218,7 @@ const FRASI = [
     { parola: "prepara", sillabe: "pre-pa-ra", tipo: "verbo" },
     { parola: "la", sillabe: "la" },
     { parola: "merenda", sillabe: "me-ren-da" },
-    { parola: "e", tipo: "congiunzione" },
+    { parola: "e", sillabe: "e", tipo: "congiunzione" },
     { parola: "i", sillabe: "i" },
     { parola: "bambini", sillabe: "bam-bi-ni" },
     { parola: "mangiano", sillabe: "man-gia-no", tipo: "verbo" },

@@ -286,6 +286,7 @@ button {
 }
 
 .parola-tile__sillabe {
+  font-family: sans-serif;
   font-size: clamp(0.85rem, 2vw, 1rem);
   color: var(--accent-dark);
   opacity: 0.75;

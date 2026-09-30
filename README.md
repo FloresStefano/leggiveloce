@@ -78,23 +78,19 @@ vanno lette (l'ordine non viene mai rimescolato). Ogni frase ha tra 6 e
 stesse bisillabe/trisillabe già note al bambino più semplici verbi
 elementari e congiunzioni.
 
-Per aiutare il bambino a riconoscere le diverse parti della frase, due
-blocchetti hanno un aspetto leggermente diverso dal solito: i **verbi**
-hanno un colore diverso (viola, invece del solito colore del testo), e
-le **congiunzioni** (es. "e", "ma", "mentre") non mostrano il
-suggerimento sillabico sotto, perché non serve. **Ricomincia** rilegge
-la stessa frase da capo, **nuova sfida** ne sceglie una diversa a caso
-dall'elenco. Le frasi si trovano in `js/games/frasi.js`; per aggiungerne
-altre basta aggiungere un nuovo elenco di blocchetti seguendo lo stesso
-formato.
+Per aiutare il bambino a riconoscere le diverse parti della frase, i
+**verbi** hanno un colore diverso (viola, invece del solito colore del
+testo). Tutti i blocchetti, comprese le congiunzioni (es. "e", "ma",
+"mentre"), mostrano sempre il suggerimento sillabico sotto la parola.
+**Ricomincia** rilegge la stessa frase da capo, **nuova sfida** ne
+sceglie una diversa a caso dall'elenco. Le frasi si trovano in
+`js/games/frasi.js`; per aggiungerne altre basta aggiungere un nuovo
+elenco di blocchetti seguendo lo stesso formato.
 
-**Scelte fatte in autonomia, da confermare o correggere:** la prima
+**Scelta fatta in autonomia, da confermare o correggere:** la prima
 parola di ogni frase è maiuscola e l'ultima ha il punto finale (come in
 una frase scritta), a differenza degli altri giochi dove le parole sono
-sempre minuscole e senza punteggiatura; gli articoli e le preposizioni
-(es. "il", "la", "nel") mostrano comunque il suggerimento sillabico
-(anche se banale, uguale alla parola stessa) perché la richiesta di
-saltare il suggerimento riguardava solo le congiunzioni.
+sempre minuscole e senza punteggiatura.
 
 Altri giochi compariranno in home come schede "Prossimamente" (disattive)
 finché non verranno definiti e attivati.
