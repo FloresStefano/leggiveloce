@@ -81,6 +81,42 @@
     </div>
   </section>
 
+  <!-- SCHERMATA GIOCO 5: Parola a fette -->
+  <section id="schermo-fette" class="screen">
+    <div class="gioco">
+      <div class="gioco__header">
+        <div class="gioco__titolo">🍕 Parola a fette</div>
+        <div id="fette-cronometro" class="cronometro">0.0s</div>
+      </div>
+
+      <div class="fette-area">
+        <div id="fette-contenuto" class="fette-contenuto">
+          <div class="fette-parola-target">
+            <div id="fette-parola-tile" class="parola-tile"></div>
+          </div>
+
+          <p class="abbina-istruzioni">Scegli quale sillaba vuoi usare per giocare:</p>
+          <div id="fette-sillabe-scelta" class="fette-sillabe-scelta"></div>
+
+          <p class="abbina-istruzioni">Trova le 7 parole con quella sillaba, più veloce che puoi:</p>
+          <div id="fette-parole-griglia" class="fette-parole-griglia"></div>
+        </div>
+
+        <div id="fette-countdown-overlay" class="countdown-overlay">
+          <span id="fette-countdown-testo" class="countdown-testo">3</span>
+        </div>
+      </div>
+
+      <p id="fette-messaggio" class="abbina-messaggio"></p>
+
+      <div class="gioco__azioni">
+        <button id="fette-btn-ricomincia" class="btn-secondario">🔁 Ricomincia</button>
+        <button id="fette-btn-nuova-sfida" class="btn-secondario">🎲 Nuova sfida</button>
+        <button id="fette-btn-esci" class="btn-secondario">🏠 Esci</button>
+      </div>
+    </div>
+  </section>
+
   <!-- SCHERMATA RISULTATI -->
   <section id="schermo-risultati" class="screen">
     <div class="risultati">
@@ -112,6 +148,7 @@
 <script src="js/games/bisillabe-piane-semplici.js"></script>
 <script src="js/games/trisillabe-piane.js"></script>
 <script src="js/games/frasi.js"></script>
+<script src="js/games/parola-a-fette.js"></script>
 <script src="js/games.js"></script>
 <script src="js/app.js"></script>
 </body>

@@ -399,6 +399,63 @@ button:disabled {
   color: var(--error);
 }
 
+/* ---------- PAROLA A FETTE ---------- */
+
+.fette-area {
+  position: relative;
+  flex: 1;
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.fette-contenuto {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: filter 0.2s ease;
+}
+
+.fette-contenuto.sfocato {
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.fette-parola-target {
+  margin-bottom: 6px;
+}
+
+.fette-parola-target .parola-tile {
+  min-width: 200px;
+}
+
+.fette-sillabe-scelta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.fette-sillabe-scelta .abbina-tile {
+  min-width: 70px;
+  font-size: clamp(1.1rem, 3vw, 1.4rem);
+}
+
+.fette-parole-griglia {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 10px;
+}
+
+.fette-parole-griglia .abbina-tile {
+  font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+  padding: 10px 8px;
+  min-height: 44px;
+}
+
 /* ---------- RISULTATI ---------- */
 
 .risultati {

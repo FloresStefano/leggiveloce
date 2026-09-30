@@ -10,11 +10,14 @@
   const COUNTDOWN_STEP_MS = 700;
 
   // Collega ogni gioco attivo al proprio elenco di parole.
+  const PAROLE_PER_PARTITA_FETTE = 7;
+
   const GAME_DATA = {
     "bisillabe-piane-semplici": PAROLE_BISILLABE_PIANE,
     "combina-bisillabe": PAROLE_BISILLABE_PIANE,
     "trisillabe-piane": PAROLE_TRISILLABE_PIANE,
     "leggi-frase": FRASI,
+    "parola-a-fette": PAROLE_A_FETTE,
   };
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
@@ -24,6 +27,7 @@
     home: $("#schermo-home"),
     gioco: $("#schermo-gioco"),
     abbina: $("#schermo-abbina"),
+    fette: $("#schermo-fette"),
     risultati: $("#schermo-risultati"),
   };
 
@@ -49,6 +53,18 @@
     abbinaBtnRicomincia: $("#abbina-btn-ricomincia"),
     abbinaBtnNuovaSfida: $("#abbina-btn-nuova-sfida"),
     abbinaBtnEsci: $("#abbina-btn-esci"),
+    // gioco 5: parola a fette
+    fetteCronometro: $("#fette-cronometro"),
+    fetteContenuto: $("#fette-contenuto"),
+    fetteParolaTile: $("#fette-parola-tile"),
+    fetteSillabeScelta: $("#fette-sillabe-scelta"),
+    fetteParoleGriglia: $("#fette-parole-griglia"),
+    fetteCountdownOverlay: $("#fette-countdown-overlay"),
+    fetteCountdownTesto: $("#fette-countdown-testo"),
+    fetteMessaggio: $("#fette-messaggio"),
+    fetteBtnRicomincia: $("#fette-btn-ricomincia"),
+    fetteBtnNuovaSfida: $("#fette-btn-nuova-sfida"),
+    fetteBtnEsci: $("#fette-btn-esci"),
     // risultati
     risultatiTempo: $("#risultati-tempo"),
     risultatiMessaggio: $("#risultati-messaggio"),
@@ -216,6 +232,7 @@
     const gioco = GAMES.find((g) => g.id === gameId);
     if (!gioco || !gioco.attivo) return;
     if (gioco.tipo === "abbinamento") avviaAbbinamento(gameId);
+    else if (gioco.tipo === "fette") avviaFette(gameId);
     else avviaLettura(gameId);
   }
 
@@ -323,28 +340,34 @@
     // btn-esci resta sempre cliccabile
   }
 
-  function avviaCountdownESfocatura(dopo) {
-    el.paroleGriglia.classList.add("sfocato");
-    el.countdownOverlay.classList.add("attivo");
-    impostaBottoniLettura(false);
+  // Conto alla rovescia + sfocatura generico: usato dal gioco di lettura
+  // e da "Parola a fette", ciascuno con il proprio contenuto/overlay.
+  function eseguiCountdown(contenutoEl, overlayEl, testoEl, impostaBottoni, dopo) {
+    contenutoEl.classList.add("sfocato");
+    overlayEl.classList.add("attivo");
+    impostaBottoni(false);
 
     let i = 0;
     function passo() {
       if (i >= COUNTDOWN_STEPS.length) {
-        el.countdownOverlay.classList.remove("attivo");
-        el.paroleGriglia.classList.remove("sfocato");
-        impostaBottoniLettura(true);
+        overlayEl.classList.remove("attivo");
+        contenutoEl.classList.remove("sfocato");
+        impostaBottoni(true);
         dopo();
         return;
       }
-      el.countdownTesto.textContent = COUNTDOWN_STEPS[i];
-      el.countdownTesto.style.animation = "none";
-      void el.countdownTesto.offsetWidth;
-      el.countdownTesto.style.animation = "";
+      testoEl.textContent = COUNTDOWN_STEPS[i];
+      testoEl.style.animation = "none";
+      void testoEl.offsetWidth;
+      testoEl.style.animation = "";
       i++;
       setTimeout(passo, COUNTDOWN_STEP_MS);
     }
     passo();
+  }
+
+  function avviaCountdownESfocatura(dopo) {
+    eseguiCountdown(el.paroleGriglia, el.countdownOverlay, el.countdownTesto, impostaBottoniLettura, dopo);
   }
 
   function ricominciaLettura() {
@@ -507,6 +530,145 @@
     avviaAbbinamento(stato.gameId);
   }
 
+  // ---------- GIOCO 5: Parola a fette ----------
+
+  function impostaBottoniFette(abilitati) {
+    el.fetteBtnRicomincia.disabled = !abilitati;
+    el.fetteBtnNuovaSfida.disabled = !abilitati;
+    // fette-btn-esci resta sempre cliccabile
+  }
+
+  function avviaCountdownFette(dopo) {
+    eseguiCountdown(
+      el.fetteContenuto,
+      el.fetteCountdownOverlay,
+      el.fetteCountdownTesto,
+      impostaBottoniFette,
+      dopo
+    );
+  }
+
+  function avviaFette(gameId) {
+    const gioco = GAMES.find((g) => g.id === gameId);
+    const pool = GAME_DATA[gameId];
+    if (!gioco || !gioco.attivo || !pool || !pool.length) return;
+
+    const fetta = pool[Math.floor(Math.random() * pool.length)];
+
+    stato = {
+      gameId,
+      tipo: "fette",
+      fetta,
+      sillabaScelta: null,
+      trovate: 0,
+      accumulatoMs: 0,
+      inCorso: false,
+      inizioSegmento: null,
+      cronometroEl: el.fetteCronometro,
+    };
+
+    el.fetteCronometro.textContent = formattaTempo(0);
+    el.fetteMessaggio.textContent = "";
+    renderFette(fetta);
+    mostraSchermo("fette");
+    avviaCountdownFette(() => avviaCronometro());
+  }
+
+  function renderFette(fetta) {
+    const parti = fetta.sillabe.split("-");
+
+    el.fetteParolaTile.innerHTML = `
+      <span class="parola-tile__parola">${escapeHtml(fetta.parola)}</span>
+      <span class="parola-tile__sillabe">${escapeHtml(fetta.sillabe)}</span>
+    `;
+
+    el.fetteSillabeScelta.innerHTML = "";
+    parti.forEach((sillaba, i) => {
+      const posizione = i + 1;
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "abbina-tile";
+      tile.textContent = sillaba;
+      tile.addEventListener("click", () => scegliSillabaFette(posizione, tile));
+      el.fetteSillabeScelta.appendChild(tile);
+    });
+
+    const paroleMescolate = mescola(fetta.parole);
+    el.fetteParoleGriglia.innerHTML = "";
+    paroleMescolate.forEach((p) => {
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "abbina-tile";
+      tile.textContent = p.parola;
+      tile.addEventListener("click", () => gestisciClickParolaFette(p.posizione, tile));
+      el.fetteParoleGriglia.appendChild(tile);
+    });
+  }
+
+  // Sceglie quale sillaba (1, 2 o 3) usare per questa partita: una volta
+  // scelta resta fissa per tutta la partita (non si puo' cambiare idea).
+  function scegliSillabaFette(posizione, elemento) {
+    if (!stato || stato.tipo !== "fette" || stato.sillabaScelta) return;
+    stato.sillabaScelta = posizione;
+    $$(".abbina-tile", el.fetteSillabeScelta).forEach((t) => {
+      t.disabled = true;
+    });
+    elemento.classList.add("selezionata");
+    el.fetteMessaggio.textContent = "";
+  }
+
+  function gestisciClickParolaFette(posizioneParola, elemento) {
+    if (!stato || stato.tipo !== "fette") return;
+    if (elemento.classList.contains("corretta")) return;
+
+    if (!stato.sillabaScelta) {
+      el.fetteMessaggio.textContent = "Scegli prima una sillaba qui sopra!";
+      return;
+    }
+
+    // Un blocchetto gia' segnato come errore si "declicca" tornando neutro,
+    // cosi' il bambino puo' correggersi e riprovare.
+    if (elemento.classList.contains("errore")) {
+      elemento.classList.remove("errore");
+      return;
+    }
+
+    if (posizioneParola === stato.sillabaScelta) {
+      elemento.classList.add("corretta");
+      elemento.disabled = true;
+      el.fetteMessaggio.textContent = "";
+      stato.trovate++;
+
+      if (stato.trovate >= PAROLE_PER_PARTITA_FETTE) {
+        pausaCronometro();
+        mostraRisultati();
+      }
+    } else {
+      elemento.classList.add("errore");
+      el.fetteMessaggio.textContent = "❌ Non ha quella sillaba, riprova!";
+    }
+  }
+
+  function ricominciaFette() {
+    if (!stato || stato.tipo !== "fette") return;
+    clearInterval(timerIntervalId);
+    stato.accumulatoMs = 0;
+    stato.inCorso = false;
+    stato.inizioSegmento = null;
+    stato.sillabaScelta = null;
+    stato.trovate = 0;
+    el.fetteCronometro.textContent = formattaTempo(0);
+    el.fetteMessaggio.textContent = "";
+    renderFette(stato.fetta);
+    mostraSchermo("fette");
+    avviaCountdownFette(() => avviaCronometro());
+  }
+
+  function nuovaSfidaFette() {
+    if (!stato) return;
+    avviaFette(stato.gameId);
+  }
+
   // ---------- Uscita dal gioco ----------
 
   function esciDalGioco() {
@@ -583,12 +745,14 @@
   function ricominciaDaRisultati() {
     if (!stato) return;
     if (stato.tipo === "lettura") ricominciaLettura();
+    else if (stato.tipo === "fette") ricominciaFette();
     else ricominciaAbbinamento();
   }
 
   function nuovaSfidaDaRisultati() {
     if (!stato) return;
     if (stato.tipo === "lettura") nuovaSfidaLettura();
+    else if (stato.tipo === "fette") nuovaSfidaFette();
     else nuovaSfidaAbbinamento();
   }
 
@@ -609,6 +773,11 @@
     el.abbinaBtnRicomincia.addEventListener("click", ricominciaAbbinamento);
     el.abbinaBtnNuovaSfida.addEventListener("click", nuovaSfidaAbbinamento);
     el.abbinaBtnEsci.addEventListener("click", esciDalGioco);
+
+    // gioco 5: parola a fette
+    el.fetteBtnRicomincia.addEventListener("click", ricominciaFette);
+    el.fetteBtnNuovaSfida.addEventListener("click", nuovaSfidaFette);
+    el.fetteBtnEsci.addEventListener("click", esciDalGioco);
 
     // risultati (condivisi)
     el.btnSalva.addEventListener("click", salvaRecordCorrente);

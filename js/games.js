@@ -8,6 +8,9 @@
  * - "abbinamento": due colonne da abbinare + cronometro (Gioco 2)
  * - "frase": stessa meccanica di "lettura" ma con un'unica frase completa
  *   (6-15 parole, ordine fisso) al posto di 10 parole casuali (Gioco 4)
+ * - "fette": parola target + scelta di una delle sue 3 sillabe + ricerca
+ *   delle 7 parole che condividono quella sillaba, con cronometro e conto
+ *   alla rovescia (Gioco 5)
  *
  * Per aggiungere un nuovo gioco in futuro con una meccanica NUOVA, serve
  * anche scrivere la logica corrispondente in js/app.js: "tipo" qui deve
@@ -49,6 +52,15 @@ const GAMES = [
     colore: "#8a63d2",
     descrizione: "Leggi tutta la frase, parola per parola, più veloce che puoi.",
     tipo: "frase",
+    attivo: true,
+  },
+  {
+    id: "parola-a-fette",
+    titolo: "Parola a fette",
+    emoji: "🍕",
+    colore: "#1fa5a5",
+    descrizione: "Scegli una sillaba e trova le 7 parole che la condividono, più veloce che puoi.",
+    tipo: "fette",
     attivo: true,
   },
   {

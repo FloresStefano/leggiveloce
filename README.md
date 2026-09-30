@@ -92,18 +92,55 @@ parola di ogni frase è maiuscola e l'ultima ha il punto finale (come in
 una frase scritta), a differenza degli altri giochi dove le parole sono
 sempre minuscole e senza punteggiatura.
 
+## 🍕 Gioco 5: "Parola a fette"
+
+1. Si entra nel gioco: come sempre, parte un conto alla rovescia "3, 2,
+   1, VIA!" con tutto sfocato. Alla fine compare in alto una parola
+   trisillaba (es. "matita"), con la sua struttura sillabica sotto, come
+   nelle altre letture.
+2. Poco sotto ci sono 3 blocchetti piccoli e compatti con le 3 sillabe
+   della parola (es. "ma", "ti", "ta"). Il bambino ne sceglie una: quella
+   è la sillaba su cui giocherà per tutta la partita (non si può più
+   cambiare, per non confondersi a metà).
+3. Più sotto ci sono 21 parole trisillabe, anche loro piccole e compatte
+   e senza suggerimento sillabico: 7 condividono la prima sillaba della
+   parola target, 7 la seconda, 7 la terza. Il bambino deve leggere e
+   trovare le 7 che condividono proprio la sillaba scelta al punto 2, nel
+   minor tempo possibile.
+4. Se sbaglia, il blocchetto diventa rosso; ci si clicca sopra di nuovo
+   per "correggersi" e farlo tornare normale, e si può riprovare. Se la
+   scelta è giusta il blocchetto diventa verde e resta bloccato. Trovate
+   tutte e 7, il cronometro si ferma da solo e si passa alla schermata
+   risultati (salva/non salvare il record, come sempre).
+
+Le 3 parole target attuali (matita, cucina, panino) e le loro parole
+associate si trovano in `js/games/parola-a-fette.js`, scelte, sillabate
+e verificate (con uno script) in modo che ogni parola condivida *una
+sola* sillaba con la parola target, mai due, per evitare ambiguità.
+Trovare 7 parole "pulite" per ognuna delle 3 posizioni di una parola
+richiede molta più cura che riempire un semplice elenco, per questo si
+parte con solo 3 parole target: aggiungerne altre in futuro è possibile
+seguendo lo stesso schema (e lo stesso script di verifica).
+
+**Scelte fatte in autonomia, da confermare o correggere:** non ho
+aggiunto il tasto Pausa a questo gioco (come "Combina bisillabe", che è
+strutturalmente simile essendo anch'esso un gioco di ricerca a tempo, non
+di lettura ad alta voce con FINE manuale); la scelta della sillaba, una
+volta fatta, resta fissa per tutta la partita.
+
 Altri giochi compariranno in home come schede "Prossimamente" (disattive)
 finché non verranno definiti e attivati.
 
 ## 🗂️ Struttura del progetto
 
 ```
-index.html                             home, gioco 1, gioco 2, gioco 3, gioco 4, risultati
+index.html                             home, gioco 1, gioco 2, gioco 3, gioco 4, gioco 5, risultati
 css/style.css                          stile grafico, responsive, per tablet
 js/games.js                            elenco dei giochi (id, tipo, attivo/non attivo)
 js/games/bisillabe-piane-semplici.js   le parole usate dai giochi 1 e 2
 js/games/trisillabe-piane.js           le parole usate dal gioco 3
 js/games/frasi.js                      le frasi usate dal gioco 4
+js/games/parola-a-fette.js             le parole target + parole associate usate dal gioco 5
 js/app.js                              logica: cronometro, tutte le meccaniche, record
 manifest.json                          per "Aggiungi a Home" su tablet/telefono
 icon.svg                               icona dell'app
@@ -116,17 +153,18 @@ Nessun build step: file statici, pubblicati gratis con **GitHub Pages**.
 1. Se serve un nuovo elenco di parole (o frasi), creare
    `js/games/<id-gioco>.js` (stesso formato di
    `bisillabe-piane-semplici.js`: `{ parola, sillabe }`, oppure di
-   `frasi.js` per una lista di frasi) e aggiungere
+   `frasi.js` per una lista di frasi, oppure di `parola-a-fette.js` per
+   parole target + parole associate) e aggiungere
    `<script src="js/games/<id-gioco>.js">` in `index.html` prima di
    `js/app.js`.
 2. Aggiungere una voce in `js/games.js` con `attivo: true` e un `tipo`
-   (`"lettura"`, `"abbinamento"`, `"frase"`, o uno nuovo se la meccanica
-   è diversa).
+   (`"lettura"`, `"abbinamento"`, `"frase"`, `"fette"`, o uno nuovo se la
+   meccanica è diversa).
 3. Collegare l'id del gioco al suo elenco parole/frasi in `GAME_DATA`
    dentro `js/app.js`.
-4. Se il `tipo` è nuovo (non "lettura", "abbinamento" né "frase"), va
-   scritta la logica corrispondente in `js/app.js` (una nuova schermata
-   in `index.html` + le funzioni avvia/ricomincia/nuova sfida per quel
+4. Se il `tipo` è nuovo (non uno di quelli già gestiti), va scritta la
+   logica corrispondente in `js/app.js` (una nuova schermata in
+   `index.html` + le funzioni avvia/ricomincia/nuova sfida per quel
    gioco) — `js/app.js` non è generico oltre le meccaniche già presenti.
 
 ## 🖥️ Provarla in locale
