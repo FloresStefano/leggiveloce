@@ -32,6 +32,15 @@ const GAMES = [
     attivo: true,
   },
   {
+    id: "trisillabe-piane",
+    titolo: "Leggi trisillabe piane",
+    emoji: "📚",
+    colore: "#e0a530",
+    descrizione: "10 parole a tre sillabe: leggile tutte più veloce che puoi.",
+    tipo: "lettura",
+    attivo: true,
+  },
+  {
     id: "prossimo-1",
     titolo: "Prossimamente",
     emoji: "🔒",

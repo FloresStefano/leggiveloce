@@ -44,10 +44,26 @@ dispositivo (`localStorage`).
    ricominciare con le stesse coppie (posizioni rimescolate) o con una
    nuova sfida di 8 parole diverse.
 
-Entrambi i giochi condividono lo stesso elenco di parole
+I giochi 1 e 2 condividono lo stesso elenco di parole
 (`js/games/bisillabe-piane-semplici.js`) e la stessa classifica per-gioco
 (visibile in home, sotto ogni gioco attivo, con il tempo migliore di ogni
 bambino).
+
+## 📚 Gioco 3: "Leggi trisillabe piane"
+
+Stessa identica meccanica del Gioco 1 ("Leggi bisillabe piane semplici"):
+sfocatura + conto alla rovescia "3, 2, 1, VIA!", cronometro, pausa/riprendi,
+ricomincia, nuova sfida, FINE con scelta di salvare o non salvare il
+record. L'unica differenza è la lista di parole: invece di bisillabe usa
+un elenco di ~190 parole italiane semplici di **tre sillabe**, tutte con
+accento piano (sulla penultima sillaba, es. "ca-VAL-lo"), scelte e
+sillabate a mano da Claude — non caricate dall'utente, ma pensate per
+essere parole comuni e di senso compiuto, note a un bambino delle
+elementari (animali, famiglia, oggetti di uso quotidiano, ecc.), con
+singolare e plurale dove possibile. La lista si trova in
+`js/games/trisillabe-piane.js` ed è collegata al gioco tramite
+`GAME_DATA` in `js/app.js`, senza bisogno di nuova logica (il `tipo` è
+`"lettura"`, lo stesso del Gioco 1).
 
 Altri giochi compariranno in home come schede "Prossimamente" (disattive)
 finché non verranno definiti e attivati.
@@ -55,11 +71,12 @@ finché non verranno definiti e attivati.
 ## 🗂️ Struttura del progetto
 
 ```
-index.html                             home, gioco 1, gioco 2, risultati
+index.html                             home, gioco 1, gioco 2, gioco 3, risultati
 css/style.css                          stile grafico, responsive, per tablet
 js/games.js                            elenco dei giochi (id, tipo, attivo/non attivo)
-js/games/bisillabe-piane-semplici.js   le parole usate da entrambi i giochi
-js/app.js                              logica: cronometro, entrambe le meccaniche, record
+js/games/bisillabe-piane-semplici.js   le parole usate dai giochi 1 e 2
+js/games/trisillabe-piane.js           le parole usate dal gioco 3
+js/app.js                              logica: cronometro, tutte le meccaniche, record
 manifest.json                          per "Aggiungi a Home" su tablet/telefono
 icon.svg                               icona dell'app
 ```

@@ -13,6 +13,7 @@
   const GAME_DATA = {
     "bisillabe-piane-semplici": PAROLE_BISILLABE_PIANE,
     "combina-bisillabe": PAROLE_BISILLABE_PIANE,
+    "trisillabe-piane": PAROLE_TRISILLABE_PIANE,
   };
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
