@@ -117,6 +117,38 @@
     </div>
   </section>
 
+  <!-- SCHERMATA GIOCO 6: Lettere speculari -->
+  <section id="schermo-lettere" class="screen">
+    <div class="gioco">
+      <div class="gioco__header">
+        <div class="gioco__titolo">🔁 Lettere speculari</div>
+        <div id="lettere-cronometro" class="cronometro">0.0s</div>
+      </div>
+
+      <div class="lettere-area">
+        <div id="lettere-contenuto" class="lettere-contenuto">
+          <p class="abbina-istruzioni">Scegli quale lettera vuoi usare per giocare:</p>
+          <div id="lettere-scelta" class="lettere-scelta"></div>
+
+          <p class="abbina-istruzioni">Trova le 6 parole con quella lettera, più veloce che puoi:</p>
+          <div id="lettere-griglia" class="lettere-griglia"></div>
+        </div>
+
+        <div id="lettere-countdown-overlay" class="countdown-overlay">
+          <span id="lettere-countdown-testo" class="countdown-testo">3</span>
+        </div>
+      </div>
+
+      <p id="lettere-messaggio" class="abbina-messaggio"></p>
+
+      <div class="gioco__azioni">
+        <button id="lettere-btn-ricomincia" class="btn-secondario">🔁 Ricomincia</button>
+        <button id="lettere-btn-nuova-sfida" class="btn-secondario">🎲 Nuova sfida</button>
+        <button id="lettere-btn-esci" class="btn-secondario">🏠 Esci</button>
+      </div>
+    </div>
+  </section>
+
   <!-- SCHERMATA RISULTATI -->
   <section id="schermo-risultati" class="screen">
     <div class="risultati">
@@ -149,6 +181,7 @@
 <script src="js/games/trisillabe-piane.js"></script>
 <script src="js/games/frasi.js"></script>
 <script src="js/games/parola-a-fette.js"></script>
+<script src="js/games/lettere-speculari.js"></script>
 <script src="js/games.js"></script>
 <script src="js/app.js"></script>
 </body>

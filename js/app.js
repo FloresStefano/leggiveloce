@@ -11,6 +11,8 @@
 
   // Collega ogni gioco attivo al proprio elenco di parole.
   const PAROLE_PER_PARTITA_FETTE = 7;
+  const LETTERE_SPECULARI = ["b", "d", "p", "q"];
+  const PAROLE_PER_LETTERA = 6;
 
   const GAME_DATA = {
     "bisillabe-piane-semplici": PAROLE_BISILLABE_PIANE,
@@ -18,6 +20,7 @@
     "trisillabe-piane": PAROLE_TRISILLABE_PIANE,
     "leggi-frase": FRASI,
     "parola-a-fette": PAROLE_A_FETTE,
+    "lettere-speculari": PAROLE_LETTERE_SPECULARI,
   };
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
@@ -28,6 +31,7 @@
     gioco: $("#schermo-gioco"),
     abbina: $("#schermo-abbina"),
     fette: $("#schermo-fette"),
+    lettere: $("#schermo-lettere"),
     risultati: $("#schermo-risultati"),
   };
 
@@ -65,6 +69,17 @@
     fetteBtnRicomincia: $("#fette-btn-ricomincia"),
     fetteBtnNuovaSfida: $("#fette-btn-nuova-sfida"),
     fetteBtnEsci: $("#fette-btn-esci"),
+    // gioco 6: lettere speculari
+    lettereCronometro: $("#lettere-cronometro"),
+    lettereContenuto: $("#lettere-contenuto"),
+    lettereScelta: $("#lettere-scelta"),
+    lettereGriglia: $("#lettere-griglia"),
+    lettereCountdownOverlay: $("#lettere-countdown-overlay"),
+    lettereCountdownTesto: $("#lettere-countdown-testo"),
+    lettereMessaggio: $("#lettere-messaggio"),
+    lettereBtnRicomincia: $("#lettere-btn-ricomincia"),
+    lettereBtnNuovaSfida: $("#lettere-btn-nuova-sfida"),
+    lettereBtnEsci: $("#lettere-btn-esci"),
     // risultati
     risultatiTempo: $("#risultati-tempo"),
     risultatiMessaggio: $("#risultati-messaggio"),
@@ -233,6 +248,7 @@
     if (!gioco || !gioco.attivo) return;
     if (gioco.tipo === "abbinamento") avviaAbbinamento(gameId);
     else if (gioco.tipo === "fette") avviaFette(gameId);
+    else if (gioco.tipo === "lettere") avviaLettereSpeculari(gameId);
     else avviaLettura(gameId);
   }
 
@@ -669,6 +685,150 @@
     avviaFette(stato.gameId);
   }
 
+  // ---------- GIOCO 6: Lettere speculari ----------
+
+  function impostaBottoniLettere(abilitati) {
+    el.lettereBtnRicomincia.disabled = !abilitati;
+    el.lettereBtnNuovaSfida.disabled = !abilitati;
+    // lettere-btn-esci resta sempre cliccabile
+  }
+
+  function avviaCountdownLettere(dopo) {
+    eseguiCountdown(
+      el.lettereContenuto,
+      el.lettereCountdownOverlay,
+      el.lettereCountdownTesto,
+      impostaBottoniLettere,
+      dopo
+    );
+  }
+
+  // Pesca 6 parole a caso per ciascuna delle 4 lettere (b/d/p/q) dal pool
+  // del gioco: 24 parole in tutto, ciascuna con la sua lettera di
+  // appartenenza.
+  function pescaParoleLettere(pool) {
+    const parole = [];
+    LETTERE_SPECULARI.forEach((lettera) => {
+      const scelte = mescola(pool[lettera]).slice(0, PAROLE_PER_LETTERA);
+      scelte.forEach((p) => parole.push({ parola: p.parola, lettera }));
+    });
+    return parole;
+  }
+
+  function avviaLettereSpeculari(gameId) {
+    const gioco = GAMES.find((g) => g.id === gameId);
+    const pool = GAME_DATA[gameId];
+    if (!gioco || !gioco.attivo || !pool) return;
+
+    const parole = pescaParoleLettere(pool);
+
+    stato = {
+      gameId,
+      tipo: "lettere",
+      parole,
+      letteraScelta: null,
+      trovate: 0,
+      accumulatoMs: 0,
+      inCorso: false,
+      inizioSegmento: null,
+      cronometroEl: el.lettereCronometro,
+    };
+
+    el.lettereCronometro.textContent = formattaTempo(0);
+    el.lettereMessaggio.textContent = "";
+    renderLettereSpeculari(parole);
+    mostraSchermo("lettere");
+    avviaCountdownLettere(() => avviaCronometro());
+  }
+
+  function renderLettereSpeculari(parole) {
+    el.lettereScelta.innerHTML = "";
+    LETTERE_SPECULARI.forEach((lettera) => {
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "abbina-tile";
+      tile.textContent = lettera;
+      tile.addEventListener("click", () => scegliLetteraSpeculare(lettera, tile));
+      el.lettereScelta.appendChild(tile);
+    });
+
+    const paroleMescolate = mescola(parole);
+    el.lettereGriglia.innerHTML = "";
+    paroleMescolate.forEach((p) => {
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "abbina-tile";
+      tile.textContent = p.parola;
+      tile.addEventListener("click", () => gestisciClickParolaLettere(p.lettera, tile));
+      el.lettereGriglia.appendChild(tile);
+    });
+  }
+
+  // Sceglie quale lettera (b/d/p/q) usare per questa partita: una volta
+  // scelta resta fissa per tutta la partita (non si puo' cambiare idea),
+  // come la scelta della sillaba in "Parola a fette".
+  function scegliLetteraSpeculare(lettera, elemento) {
+    if (!stato || stato.tipo !== "lettere" || stato.letteraScelta) return;
+    stato.letteraScelta = lettera;
+    $$(".abbina-tile", el.lettereScelta).forEach((t) => {
+      t.disabled = true;
+    });
+    elemento.classList.add("selezionata");
+    el.lettereMessaggio.textContent = "";
+  }
+
+  function gestisciClickParolaLettere(letteraParola, elemento) {
+    if (!stato || stato.tipo !== "lettere") return;
+    if (elemento.classList.contains("corretta")) return;
+
+    if (!stato.letteraScelta) {
+      el.lettereMessaggio.textContent = "Scegli prima una lettera qui sopra!";
+      return;
+    }
+
+    // Un blocchetto gia' segnato come errore si "declicca" tornando neutro,
+    // cosi' il bambino puo' correggersi e riprovare.
+    if (elemento.classList.contains("errore")) {
+      elemento.classList.remove("errore");
+      return;
+    }
+
+    if (letteraParola === stato.letteraScelta) {
+      elemento.classList.add("corretta");
+      elemento.disabled = true;
+      el.lettereMessaggio.textContent = "";
+      stato.trovate++;
+
+      if (stato.trovate >= PAROLE_PER_LETTERA) {
+        pausaCronometro();
+        mostraRisultati();
+      }
+    } else {
+      elemento.classList.add("errore");
+      el.lettereMessaggio.textContent = "❌ Non ha quella lettera, riprova!";
+    }
+  }
+
+  function ricominciaLettereSpeculari() {
+    if (!stato || stato.tipo !== "lettere") return;
+    clearInterval(timerIntervalId);
+    stato.accumulatoMs = 0;
+    stato.inCorso = false;
+    stato.inizioSegmento = null;
+    stato.letteraScelta = null;
+    stato.trovate = 0;
+    el.lettereCronometro.textContent = formattaTempo(0);
+    el.lettereMessaggio.textContent = "";
+    renderLettereSpeculari(stato.parole);
+    mostraSchermo("lettere");
+    avviaCountdownLettere(() => avviaCronometro());
+  }
+
+  function nuovaSfidaLettereSpeculari() {
+    if (!stato) return;
+    avviaLettereSpeculari(stato.gameId);
+  }
+
   // ---------- Uscita dal gioco ----------
 
   function esciDalGioco() {
@@ -746,6 +906,7 @@
     if (!stato) return;
     if (stato.tipo === "lettura") ricominciaLettura();
     else if (stato.tipo === "fette") ricominciaFette();
+    else if (stato.tipo === "lettere") ricominciaLettereSpeculari();
     else ricominciaAbbinamento();
   }
 
@@ -753,6 +914,7 @@
     if (!stato) return;
     if (stato.tipo === "lettura") nuovaSfidaLettura();
     else if (stato.tipo === "fette") nuovaSfidaFette();
+    else if (stato.tipo === "lettere") nuovaSfidaLettereSpeculari();
     else nuovaSfidaAbbinamento();
   }
 
@@ -778,6 +940,11 @@
     el.fetteBtnRicomincia.addEventListener("click", ricominciaFette);
     el.fetteBtnNuovaSfida.addEventListener("click", nuovaSfidaFette);
     el.fetteBtnEsci.addEventListener("click", esciDalGioco);
+
+    // gioco 6: lettere speculari
+    el.lettereBtnRicomincia.addEventListener("click", ricominciaLettereSpeculari);
+    el.lettereBtnNuovaSfida.addEventListener("click", nuovaSfidaLettereSpeculari);
+    el.lettereBtnEsci.addEventListener("click", esciDalGioco);
 
     // risultati (condivisi)
     el.btnSalva.addEventListener("click", salvaRecordCorrente);

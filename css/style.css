@@ -456,6 +456,59 @@ button:disabled {
   min-height: 44px;
 }
 
+/* ---------- LETTERE SPECULARI ---------- */
+
+.lettere-area {
+  position: relative;
+  flex: 1;
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.lettere-contenuto {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: filter 0.2s ease;
+}
+
+.lettere-contenuto.sfocato {
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.lettere-scelta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+/* Le 4 lettere sono il fulcro dell'esercizio: blocchetti compatti come le
+   sillabe di "Parola a fette", ma con un font ancora più grande per
+   rendere ben visibile la forma di ciascuna lettera minuscola. */
+.lettere-scelta .abbina-tile {
+  min-width: 84px;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-family: var(--font-body);
+}
+
+.lettere-griglia {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 10px;
+}
+
+.lettere-griglia .abbina-tile {
+  font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+  padding: 10px 8px;
+  min-height: 44px;
+}
+
 /* ---------- RISULTATI ---------- */
 
 .risultati {

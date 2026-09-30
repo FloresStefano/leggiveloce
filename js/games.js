@@ -11,6 +11,9 @@
  * - "fette": parola target + scelta di una delle sue 3 sillabe + ricerca
  *   delle 7 parole che condividono quella sillaba, con cronometro e conto
  *   alla rovescia (Gioco 5)
+ * - "lettere": scelta di una lettera speculare (b/d/p/q) + ricerca delle 6
+ *   parole che contengono proprio quella lettera, con cronometro e conto
+ *   alla rovescia (Gioco 6)
  *
  * Per aggiungere un nuovo gioco in futuro con una meccanica NUOVA, serve
  * anche scrivere la logica corrispondente in js/app.js: "tipo" qui deve
@@ -61,6 +64,15 @@ const GAMES = [
     colore: "#1fa5a5",
     descrizione: "Scegli una sillaba e trova le 7 parole che la condividono, più veloce che puoi.",
     tipo: "fette",
+    attivo: true,
+  },
+  {
+    id: "lettere-speculari",
+    titolo: "Lettere speculari",
+    emoji: "🔁",
+    colore: "#d1495b",
+    descrizione: "Scegli una lettera (b/d/p/q) e trova le 6 parole che la contengono, più veloce che puoi.",
+    tipo: "lettere",
     attivo: true,
   },
   {

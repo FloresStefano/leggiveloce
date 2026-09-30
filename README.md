@@ -128,6 +128,50 @@ strutturalmente simile essendo anch'esso un gioco di ricerca a tempo, non
 di lettura ad alta voce con FINE manuale); la scelta della sillaba, una
 volta fatta, resta fissa per tutta la partita.
 
+## 🔁 Gioco 6: "Lettere speculari" (b/d/p/q)
+
+1. Si entra nel gioco: come sempre, parte un conto alla rovescia "3, 2, 1,
+   VIA!" con tutto sfocato. Alla fine compaiono in alto 4 blocchetti
+   piccoli e compatti, uno per ciascuna lettera speculare: **b**, **d**,
+   **p**, **q**.
+2. Il bambino ne sceglie una: quella è la lettera su cui giocherà per
+   tutta la partita (non si può più cambiare, come la sillaba in "Parola a
+   fette").
+3. Più sotto ci sono 24 parole (bisillabe o trisillabe), anche loro
+   piccole e compatte e senza suggerimento sillabico: 6 parole per ognuna
+   delle 4 lettere. Ogni parola contiene *una sola* delle 4 lettere
+   speculari (mai due insieme, per non creare ambiguità), come iniziale o
+   all'interno della parola. Il bambino deve leggere e trovare le 6 parole
+   che contengono proprio la lettera scelta, nel minor tempo possibile.
+4. Se sbaglia, il blocchetto diventa rosso; ci si clicca sopra di nuovo
+   per "correggersi" e farlo tornare normale, e si può riprovare. Se la
+   scelta è giusta il blocchetto diventa verde e resta bloccato. Trovate
+   tutte e 6, il cronometro si ferma da solo e si passa alla schermata
+   risultati (salva/non salvare il record, come sempre).
+
+Le parole si trovano in `js/games/lettere-speculari.js`, raggruppate per
+lettera (8-11 parole disponibili per lettera, verificate una per una in
+modo che ognuna contenga solo quella lettera speculare): ad ogni partita
+(e ad ogni "Nuova sfida") ne vengono pescate 6 a caso per lettera, per un
+totale di 24 parole diverse ogni volta.
+
+**Scelte fatte in autonomia, da confermare o correggere:**
+- la richiesta indicava "6 parole per ciascun tipo" (24 parole ÷ 4
+  lettere = 6) ma più avanti parlava di trovare "le 4 paroline": ho
+  considerato quest'ultima un refuso e implementato **6** parole da
+  trovare per lettera, coerente con il conteggio "24 parole... 6 per
+  ciascun tipo" — da confermare.
+- le 4 lettere sono sempre mostrate nello stesso ordine fisso b-d-p-q (non
+  mescolate), per dare al bambino un riferimento visivo costante mentre
+  si allena a distinguerle.
+- ho scritto le lettere con un font sans-serif semplice (lo stesso del
+  testo, non quello arrotondato dei titoli/parole) e più grande del
+  solito, per rendere ben leggibile la forma di ciascuna lettera.
+- come "Parola a fette" e "Combina bisillabe", non ho aggiunto il tasto
+  Pausa (gioco di ricerca a tempo, non di lettura ad alta voce con FINE
+  manuale); la scelta della lettera, una volta fatta, resta fissa per
+  tutta la partita.
+
 Altri giochi compariranno in home come schede "Prossimamente" (disattive)
 finché non verranno definiti e attivati.
 
@@ -141,6 +185,7 @@ js/games/bisillabe-piane-semplici.js   le parole usate dai giochi 1 e 2
 js/games/trisillabe-piane.js           le parole usate dal gioco 3
 js/games/frasi.js                      le frasi usate dal gioco 4
 js/games/parola-a-fette.js             le parole target + parole associate usate dal gioco 5
+js/games/lettere-speculari.js          le parole (per lettera b/d/p/q) usate dal gioco 6
 js/app.js                              logica: cronometro, tutte le meccaniche, record
 manifest.json                          per "Aggiungi a Home" su tablet/telefono
 icon.svg                               icona dell'app
@@ -158,8 +203,8 @@ Nessun build step: file statici, pubblicati gratis con **GitHub Pages**.
    `<script src="js/games/<id-gioco>.js">` in `index.html` prima di
    `js/app.js`.
 2. Aggiungere una voce in `js/games.js` con `attivo: true` e un `tipo`
-   (`"lettura"`, `"abbinamento"`, `"frase"`, `"fette"`, o uno nuovo se la
-   meccanica è diversa).
+   (`"lettura"`, `"abbinamento"`, `"frase"`, `"fette"`, `"lettere"`, o uno
+   nuovo se la meccanica è diversa).
 3. Collegare l'id del gioco al suo elenco parole/frasi in `GAME_DATA`
    dentro `js/app.js`.
 4. Se il `tipo` è nuovo (non uno di quelli già gestiti), va scritta la
