@@ -204,16 +204,14 @@ bastoncini a quadretti della stessa lunghezza dei numeri.
    7 + 5?" con 6 risposte (quella giusta + 5 sbagliate vicine, tra 10 e 19,
    in ordine casuale). Risposta sbagliata: il pulsante diventa grigio e
    compare "No, riprova! Conta 10 nella scatola più il riporto.". Risposta
-   giusta: il cronometro si ferma, il pulsante diventa verde, la domanda
-   diventa "Bravo! 7 + 5 = 12 · 8.4s" e il "?" diventa il risultato.
+   giusta: il cronometro si ferma, la striscia delle risposte sparisce, sotto
+   la somma compare "Bravo! 7 + 5 = 12 · 8.4s" e il "?" diventa il risultato.
 6. **Ricomincia** riparte con gli stessi numeri (rifacendo il conto alla
    rovescia), **Nuova sfida** genera numeri nuovi (mai la stessa somma di
    quella appena fatta) e azzera il tempo.
 
-Opzioni sotto il gioco: **🔢 Mostra i numeri** (numeri 1-10 / 1-8 sotto le
-scatole, acceso di default) e **💡 Aiuto** (spento di default: evidenzia con
-una linea tratteggiata lampeggiante il punto dove spezzare il bastoncino per
-arrivare a 10).
+Opzione sotto il gioco: **🔢 Mostra i numeri** (numeri 1-10 / 1-8 sotto le
+scatole, acceso di default).
 
 Non usa nessun file di parole: i numeri sono generati dal codice
 (`js/app.js`, sezione "GIOCO 7").
@@ -237,7 +235,7 @@ Non usa nessun file di parole: i numeri sono generati dal codice
   spostati si accodano alla fine della zona (non si riordinano).
 - su schermi stretti i quadretti si rimpiccioliscono sotto i 44px (e sotto i
   900px di larghezza le zone si dispongono in colonna) per far stare tutto.
-- le opzioni (numeri, aiuto) restano in memoria solo finché l'app è aperta.
+- l'opzione dei numeri resta in memoria solo finché l'app è aperta.
 
 Altri giochi compariranno in home come schede "Prossimamente" (disattive)
 finché non verranno definiti e attivati.

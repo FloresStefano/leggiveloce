@@ -623,6 +623,13 @@ button:disabled {
   color: var(--accent-dark);
 }
 
+.riporto-messaggio--bravo {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--verde-ok);
+}
+
 /* Zone con i pezzi */
 
 .riporto-pezzi {
@@ -702,16 +709,6 @@ button:disabled {
 }
 
 .taglio:hover::after { background: var(--ink); }
-
-.taglio--aiuto::after {
-  background: repeating-linear-gradient(to bottom, var(--ink) 0 5px, #fff 5px 8px);
-  animation: riporto-lampeggia 1s ease-in-out infinite;
-}
-
-@keyframes riporto-lampeggia {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
-}
 
 /* Scatole */
 
@@ -801,13 +798,6 @@ button:disabled {
   border-color: #d9d6d3;
   box-shadow: none;
   cursor: not-allowed;
-}
-
-.riporto-risposta.giusta {
-  background: var(--verde-ok);
-  border-color: var(--verde-ok);
-  color: #fff;
-  opacity: 1;
 }
 
 /* Opzioni */

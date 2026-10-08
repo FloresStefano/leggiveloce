@@ -104,7 +104,6 @@
     riportoDomanda: $("#riporto-domanda"),
     riportoRisposte: $("#riporto-risposte"),
     riportoOptNumeri: $("#riporto-opt-numeri"),
-    riportoOptAiuto: $("#riporto-opt-aiuto"),
     riportoCountdownOverlay: $("#riporto-countdown-overlay"),
     riportoCountdownTesto: $("#riporto-countdown-testo"),
     riportoBtnRicomincia: $("#riporto-btn-ricomincia"),
@@ -918,9 +917,8 @@
   const SOGLIA_DRAG_PX = 8;
   const TESTO_PERFETTO = "Perfetto! Ora scegli il risultato giusto.";
 
-  // Opzioni (restano valide tra una sfida e l'altra finche' l'app e' aperta)
+  // Opzione (resta valida tra una sfida e l'altra finche' l'app e' aperta)
   let riportoMostraNumeri = true;
-  let riportoAiuto = false; // spento di default
   let riportoUltimaSomma = null;
   let riportoDrag = null;
   let riportoUltimoDragMs = 0;
@@ -1038,31 +1036,7 @@
     avviaRiporto(stato.gameId);
   }
 
-  // Dove far vedere il taglio per arrivare a 10 (aiuto opzionale).
-  function puntoTaglioAiuto() {
-    const z = stato.zone;
-    const nScatola = sommaQuadretti(z.scatola);
-    if (nScatola > CELLE_SCATOLA) {
-      let acc = 0;
-      for (const p of z.scatola) {
-        if (acc < CELLE_SCATOLA && acc + p.len > CELLE_SCATOLA) {
-          return { id: p.id, k: CELLE_SCATOLA - acc };
-        }
-        acc += p.len;
-      }
-      return null;
-    }
-    if (nScatola < CELLE_SCATOLA) {
-      const serve = CELLE_SCATOLA - nScatola;
-      const candidati = z.fuori.concat(z.riporto);
-      if (candidati.some((p) => p.len === serve)) return null;
-      const da = candidati.find((p) => p.len > serve);
-      return da ? { id: da.id, k: serve } : null;
-    }
-    return null;
-  }
-
-  function creaPezzoEl(p, aiutoTaglio) {
+  function creaPezzoEl(p) {
     const d = document.createElement("div");
     d.className = "pezzo pezzo--" + p.colore;
     if (stato.selezionato === p.id) d.classList.add("selezionato");
@@ -1076,35 +1050,37 @@
         t.dataset.id = String(p.id);
         t.dataset.k = String(k);
         t.style.left = `calc(${k} * var(--cella))`;
-        if (aiutoTaglio && aiutoTaglio.id === p.id && aiutoTaglio.k === k) {
-          t.classList.add("taglio--aiuto");
-        }
         d.appendChild(t);
       }
     }
     return d;
   }
 
-  function renderZonaRiporto(contenitore, pezzi, aiutoTaglio) {
+  function renderZonaRiporto(contenitore, pezzi) {
     contenitore.innerHTML = "";
-    pezzi.forEach((p) => contenitore.appendChild(creaPezzoEl(p, aiutoTaglio)));
+    pezzi.forEach((p) => contenitore.appendChild(creaPezzoEl(p)));
   }
 
   function renderRiporto() {
     const s = stato;
     const nScatola = sommaQuadretti(s.zone.scatola);
     const nRiporto = sommaQuadretti(s.zone.riporto);
-    const aiuto = riportoAiuto && s.fase !== "finito" ? puntoTaglioAiuto() : null;
 
     el.riportoSomma.innerHTML =
       `<span class="rip-n rip-n--a">${s.a}</span><span class="rip-op">+</span>` +
       `<span class="rip-n rip-n--b">${s.b}</span><span class="rip-op">=</span>` +
       `<span class="rip-ris">${s.fase === "finito" ? s.totale : "?"}</span>`;
-    el.riportoMessaggio.textContent = s.messaggio;
+    // A risposta giusta la striscia delle risposte sparisce e il "Bravo!"
+    // resta sotto la somma.
+    el.riportoMessaggio.textContent =
+      s.fase === "finito"
+        ? `Bravo! ${s.a} + ${s.b} = ${s.totale} · ${formattaTempo(tempoTrascorsoMs())}`
+        : s.messaggio;
+    el.riportoMessaggio.classList.toggle("riporto-messaggio--bravo", s.fase === "finito");
 
-    renderZonaRiporto(el.riportoPezziFuori, s.zone.fuori, aiuto);
-    renderZonaRiporto(el.riportoPezziScatola, s.zone.scatola, aiuto);
-    renderZonaRiporto(el.riportoPezziRiporto, s.zone.riporto, aiuto);
+    renderZonaRiporto(el.riportoPezziFuori, s.zone.fuori);
+    renderZonaRiporto(el.riportoPezziScatola, s.zone.scatola);
+    renderZonaRiporto(el.riportoPezziRiporto, s.zone.riporto);
 
     el.riportoContatoreScatola.textContent = `${nScatola} / ${CELLE_SCATOLA}`;
     el.riportoContatoreScatola.className =
@@ -1117,13 +1093,10 @@
 
     el.riportoContenuto.classList.toggle("senza-numeri", !riportoMostraNumeri);
 
-    const mostraRisposte = s.fase !== "gioco";
+    const mostraRisposte = s.fase === "risposte";
     el.riportoRisposteCard.hidden = !mostraRisposte;
     if (mostraRisposte) {
-      el.riportoDomanda.textContent =
-        s.fase === "finito"
-          ? `Bravo! ${s.a} + ${s.b} = ${s.totale} · ${formattaTempo(tempoTrascorsoMs())}`
-          : `Quanto fa ${s.a} + ${s.b}?`;
+      el.riportoDomanda.textContent = `Quanto fa ${s.a} + ${s.b}?`;
       el.riportoRisposte.innerHTML = "";
       s.risposte.forEach((n) => {
         const b = document.createElement("button");
@@ -1133,10 +1106,6 @@
         if (s.sbagliate.includes(n)) {
           b.classList.add("sbagliata");
           b.disabled = true;
-        }
-        if (s.fase === "finito") {
-          b.disabled = true;
-          if (n === s.totale) b.classList.add("giusta");
         }
         b.addEventListener("click", () => rispondiRiporto(n));
         el.riportoRisposte.appendChild(b);
@@ -1487,10 +1456,6 @@
     el.riportoContenuto.addEventListener("click", clickRiporto);
     el.riportoOptNumeri.addEventListener("change", () => {
       riportoMostraNumeri = el.riportoOptNumeri.checked;
-      if (stato && stato.tipo === "riporto") renderRiporto();
-    });
-    el.riportoOptAiuto.addEventListener("change", () => {
-      riportoAiuto = el.riportoOptAiuto.checked;
       if (stato && stato.tipo === "riporto") renderRiporto();
     });
 
