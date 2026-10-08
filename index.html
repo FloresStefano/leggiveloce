@@ -149,6 +149,81 @@
     </div>
   </section>
 
+  <!-- SCHERMATA GIOCO 7: Somme col riporto -->
+  <section id="schermo-riporto" class="screen">
+    <div class="gioco gioco--ampio">
+      <div class="gioco__header">
+        <div class="gioco__titolo">🧮 Somme col riporto</div>
+        <div id="riporto-cronometro" class="cronometro">0.0s</div>
+      </div>
+
+      <div class="riporto-area">
+        <div id="riporto-contenuto" class="riporto-contenuto">
+          <div class="riporto-riga riporto-riga--1">
+            <div class="riporto-card">
+              <div id="riporto-somma" class="riporto-somma"></div>
+              <p id="riporto-messaggio" class="riporto-messaggio"></p>
+            </div>
+            <div class="riporto-card" data-zona="fuori">
+              <h3 class="riporto-card__titolo">Bastoncini</h3>
+              <div id="riporto-pezzi-fuori" class="riporto-pezzi riporto-pezzi--fuori"></div>
+            </div>
+          </div>
+
+          <div id="riporto-risposte-card" class="riporto-card riporto-risposte" hidden>
+            <h3 id="riporto-domanda" class="riporto-domanda"></h3>
+            <div id="riporto-risposte" class="riporto-risposte__righe"></div>
+          </div>
+
+          <div class="riporto-riga riporto-riga--2">
+            <div class="riporto-card" data-zona="scatola">
+              <div class="riporto-card__testa">
+                <h3>Scatola da 10</h3>
+                <span id="riporto-contatore-scatola" class="riporto-contatore">0 / 10</span>
+              </div>
+              <div class="riporto-scatola">
+                <span id="riporto-esce" class="riporto-esce" hidden>esce fuori! ✂️</span>
+                <div class="riporto-cornice riporto-cornice--10">
+                  <div id="riporto-pezzi-scatola" class="riporto-pezzi"></div>
+                </div>
+                <div id="riporto-numeri-scatola" class="riporto-numeri"></div>
+              </div>
+            </div>
+
+            <div class="riporto-card" data-zona="riporto">
+              <div class="riporto-card__testa">
+                <h3>Scatola del riporto</h3>
+                <span id="riporto-contatore-riporto" class="riporto-contatore">0</span>
+              </div>
+              <div class="riporto-scatola">
+                <div class="riporto-cornice riporto-cornice--8">
+                  <div id="riporto-pezzi-riporto" class="riporto-pezzi"></div>
+                </div>
+                <div id="riporto-numeri-riporto" class="riporto-numeri"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="riporto-countdown-overlay" class="countdown-overlay">
+          <span id="riporto-countdown-testo" class="countdown-testo">3</span>
+        </div>
+      </div>
+
+      <div class="riporto-opzioni">
+        <label class="riporto-opzione"><input id="riporto-opt-numeri" type="checkbox" checked /> 🔢 Mostra i numeri</label>
+        <label class="riporto-opzione"><input id="riporto-opt-aiuto" type="checkbox" /> 💡 Aiuto</label>
+      </div>
+
+      <div class="gioco__azioni">
+        <button id="riporto-btn-ricomincia" class="btn-secondario">🔁 Ricomincia</button>
+        <button id="riporto-btn-nuova-sfida" class="btn-secondario">🎲 Nuova sfida</button>
+        <button id="riporto-btn-controlla" class="btn-primario">✅ CONTROLLA</button>
+        <button id="riporto-btn-esci" class="btn-secondario">🏠 Esci</button>
+      </div>
+    </div>
+  </section>
+
   <!-- SCHERMATA RISULTATI -->
   <section id="schermo-risultati" class="screen">
     <div class="risultati">

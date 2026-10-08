@@ -177,13 +177,75 @@ Gioco 5, su richiesta esplicita.)
   manuale); la scelta della lettera, una volta fatta, resta fissa per
   tutta la partita.
 
+## 🧮 Gioco 7: "Somme col riporto"
+
+Come sempre parte con il conto alla rovescia "3, 2, 1, VIA!" (tutto sfocato)
+e poi il cronometro. Il bambino vede una somma con riporto (due numeri da 1 a
+9, risultato da 11 a 18; primo numero corallo, secondo azzurro) e due
+bastoncini a quadretti della stessa lunghezza dei numeri.
+
+1. **Scatola da 10**: cornice larga esattamente 10 quadretti (numeri 1-10
+   sotto). I bastoncini si dispongono uno dopo l'altro da sinistra; se
+   superano il 10, la parte in più esce dalla cornice e compare "esce
+   fuori! ✂️". Il contatore in alto a destra mostra "N / 10" (verde se è 10,
+   rosso se è di più).
+2. **Spezzare**: si tocca/clicca la linea tra due quadretti di un
+   bastoncino (con il mouse la linea diventa scura al passaggio). I due
+   pezzi mantengono il colore.
+3. **Spostare**: i pezzi si muovono tra le tre zone (Bastoncini, Scatola da
+   10, Scatola del riporto, larga 8 quadretti) trascinandoli, oppure
+   toccando il pezzo (si solleva) e poi la zona.
+4. **Aiuti a parole** (compaiono premendo CONTROLLA): "Il bastoncino esce
+   dalla scatola: spezzalo dove finisce il 10!", "Scatola piena! Ora sposta
+   l'avanzo nella scatola del riporto.", "La scatola deve contenere
+   esattamente 10 quadretti.".
+5. Quando la scatola ha esattamente 10 quadretti e non resta nulla fuori
+   (quindi il riporto è giusto) il gioco **non finisce**: compare "Quanto fa
+   7 + 5?" con 6 risposte (quella giusta + 5 sbagliate vicine, tra 10 e 19,
+   in ordine casuale). Risposta sbagliata: il pulsante diventa grigio e
+   compare "No, riprova! Conta 10 nella scatola più il riporto.". Risposta
+   giusta: il cronometro si ferma, il pulsante diventa verde, la domanda
+   diventa "Bravo! 7 + 5 = 12 · 8.4s" e il "?" diventa il risultato.
+6. **Ricomincia** riparte con gli stessi numeri (rifacendo il conto alla
+   rovescia), **Nuova sfida** genera numeri nuovi (mai la stessa somma di
+   quella appena fatta) e azzera il tempo.
+
+Opzioni sotto il gioco: **🔢 Mostra i numeri** (numeri 1-10 / 1-8 sotto le
+scatole, acceso di default) e **💡 Aiuto** (spento di default: evidenzia con
+una linea tratteggiata lampeggiante il punto dove spezzare il bastoncino per
+arrivare a 10).
+
+Non usa nessun file di parole: i numeri sono generati dal codice
+(`js/app.js`, sezione "GIOCO 7").
+
+**Scelte fatte in autonomia, da confermare o correggere:**
+- ho aggiunto il tasto **🏠 Esci** (come in tutti gli altri giochi), non
+  presente nell'elenco dei pulsanti della richiesta.
+- a risposta giusta non compare nessuna finestra, come richiesto; per
+  salvare il record nella classifica (come negli altri giochi) il tasto
+  CONTROLLA diventa **💾 Salva il tempo**, che porta alla solita schermata
+  "Tempo finale" (salva / non salvare).
+- la scheda con le 6 risposte compare tra la prima e la seconda riga (come
+  negli screenshot), non in fondo; appare da sola quando la scatola è
+  giusta, e sparisce se il bambino rimette in disordine i pezzi.
+- i messaggi di aiuto compaiono solo premendo CONTROLLA; per il caso non
+  previsto (scatola ancora da riempire e bastoncini ancora fuori) il testo
+  è "Sposta i bastoncini nella scatola da 10 per riempirla.".
+- toccando una linea di taglio senza trascinare il pezzo si spezza;
+  trascinando da lì si sposta tutto il pezzo. Se un pezzo è già sollevato e
+  si tocca un pezzo di un'altra zona, vale come toccare quella zona. I pezzi
+  spostati si accodano alla fine della zona (non si riordinano).
+- su schermi stretti i quadretti si rimpiccioliscono sotto i 44px (e sotto i
+  900px di larghezza le zone si dispongono in colonna) per far stare tutto.
+- le opzioni (numeri, aiuto) restano in memoria solo finché l'app è aperta.
+
 Altri giochi compariranno in home come schede "Prossimamente" (disattive)
 finché non verranno definiti e attivati.
 
 ## 🗂️ Struttura del progetto
 
 ```
-index.html                             home, gioco 1, gioco 2, gioco 3, gioco 4, gioco 5, risultati
+index.html                             home, giochi 1-7, risultati
 css/style.css                          stile grafico, responsive, per tablet
 js/games.js                            elenco dei giochi (id, tipo, attivo/non attivo)
 js/games/bisillabe-piane-semplici.js   le parole usate dai giochi 1 e 2
@@ -208,7 +270,7 @@ Nessun build step: file statici, pubblicati gratis con **GitHub Pages**.
    `<script src="js/games/<id-gioco>.js">` in `index.html` prima di
    `js/app.js`.
 2. Aggiungere una voce in `js/games.js` con `attivo: true` e un `tipo`
-   (`"lettura"`, `"abbinamento"`, `"frase"`, `"fette"`, `"lettere"`, o uno
+   (`"lettura"`, `"abbinamento"`, `"frase"`, `"fette"`, `"lettere"`, `"riporto"`, o uno
    nuovo se la meccanica è diversa).
 3. Collegare l'id del gioco al suo elenco parole/frasi in `GAME_DATA`
    dentro `js/app.js`.

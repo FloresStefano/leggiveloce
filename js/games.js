@@ -14,6 +14,9 @@
  * - "lettere": scelta di una lettera speculare (b/d/p/q) + ricerca delle 5
  *   parole che contengono proprio quella lettera, con cronometro e conto
  *   alla rovescia (Gioco 6)
+ * - "riporto": somma con riporto da fare con i bastoncini (si spezzano, si
+ *   trascinano nella scatola da 10 e in quella del riporto) + scelta del
+ *   risultato fra 6 risposte; non usa nessun file di parole (Gioco 7)
  *
  * Per aggiungere un nuovo gioco in futuro con una meccanica NUOVA, serve
  * anche scrivere la logica corrispondente in js/app.js: "tipo" qui deve
@@ -73,6 +76,15 @@ const GAMES = [
     colore: "#d1495b",
     descrizione: "Scegli una lettera (b/d/p/q) e trova le 5 parole che la contengono, più veloce che puoi.",
     tipo: "lettere",
+    attivo: true,
+  },
+  {
+    id: "somme-col-riporto",
+    titolo: "Somme col riporto",
+    emoji: "🧮",
+    colore: "#f08a24",
+    descrizione: "Spezza i bastoncini, riempi la scatola da 10 e trova il risultato, più veloce che puoi.",
+    tipo: "riporto",
     attivo: true,
   },
   {

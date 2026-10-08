@@ -38,6 +38,7 @@
     abbina: $("#schermo-abbina"),
     fette: $("#schermo-fette"),
     lettere: $("#schermo-lettere"),
+    riporto: $("#schermo-riporto"),
     risultati: $("#schermo-risultati"),
   };
 
@@ -86,6 +87,30 @@
     lettereBtnRicomincia: $("#lettere-btn-ricomincia"),
     lettereBtnNuovaSfida: $("#lettere-btn-nuova-sfida"),
     lettereBtnEsci: $("#lettere-btn-esci"),
+    // gioco 7: somme col riporto
+    riportoCronometro: $("#riporto-cronometro"),
+    riportoContenuto: $("#riporto-contenuto"),
+    riportoSomma: $("#riporto-somma"),
+    riportoMessaggio: $("#riporto-messaggio"),
+    riportoPezziFuori: $("#riporto-pezzi-fuori"),
+    riportoPezziScatola: $("#riporto-pezzi-scatola"),
+    riportoPezziRiporto: $("#riporto-pezzi-riporto"),
+    riportoContatoreScatola: $("#riporto-contatore-scatola"),
+    riportoContatoreRiporto: $("#riporto-contatore-riporto"),
+    riportoEsce: $("#riporto-esce"),
+    riportoNumeriScatola: $("#riporto-numeri-scatola"),
+    riportoNumeriRiporto: $("#riporto-numeri-riporto"),
+    riportoRisposteCard: $("#riporto-risposte-card"),
+    riportoDomanda: $("#riporto-domanda"),
+    riportoRisposte: $("#riporto-risposte"),
+    riportoOptNumeri: $("#riporto-opt-numeri"),
+    riportoOptAiuto: $("#riporto-opt-aiuto"),
+    riportoCountdownOverlay: $("#riporto-countdown-overlay"),
+    riportoCountdownTesto: $("#riporto-countdown-testo"),
+    riportoBtnRicomincia: $("#riporto-btn-ricomincia"),
+    riportoBtnNuovaSfida: $("#riporto-btn-nuova-sfida"),
+    riportoBtnControlla: $("#riporto-btn-controlla"),
+    riportoBtnEsci: $("#riporto-btn-esci"),
     // risultati
     risultatiTempo: $("#risultati-tempo"),
     risultatiMessaggio: $("#risultati-messaggio"),
@@ -255,6 +280,7 @@
     if (gioco.tipo === "abbinamento") avviaAbbinamento(gameId);
     else if (gioco.tipo === "fette") avviaFette(gameId);
     else if (gioco.tipo === "lettere") avviaLettereSpeculari(gameId);
+    else if (gioco.tipo === "riporto") avviaRiporto(gameId);
     else avviaLettura(gameId);
   }
 
@@ -885,10 +911,457 @@
     avviaLettereSpeculari(stato.gameId);
   }
 
+  // ---------- GIOCO 7: Somme col riporto ----------
+
+  const CELLE_SCATOLA = 10;
+  const CELLE_RIPORTO = 8;
+  const SOGLIA_DRAG_PX = 8;
+  const TESTO_PERFETTO = "Perfetto! Ora scegli il risultato giusto.";
+
+  // Opzioni (restano valide tra una sfida e l'altra finche' l'app e' aperta)
+  let riportoMostraNumeri = true;
+  let riportoAiuto = false; // spento di default
+  let riportoUltimaSomma = null;
+  let riportoDrag = null;
+  let riportoUltimoDragMs = 0;
+
+  function impostaBottoniRiporto(abilitati) {
+    el.riportoBtnRicomincia.disabled = !abilitati;
+    el.riportoBtnNuovaSfida.disabled = !abilitati;
+    el.riportoBtnControlla.disabled = !abilitati;
+    // riporto-btn-esci resta sempre cliccabile
+  }
+
+  function avviaCountdownRiporto(dopo) {
+    eseguiCountdown(
+      el.riportoContenuto,
+      el.riportoCountdownOverlay,
+      el.riportoCountdownTesto,
+      impostaBottoniRiporto,
+      dopo
+    );
+  }
+
+  // Due numeri da 1 a 9 con somma da 11 a 18 (cioe' sempre con riporto).
+  function generaSommaRiporto() {
+    const coppie = [];
+    for (let a = 1; a <= 9; a++) {
+      for (let b = 1; b <= 9; b++) {
+        if (a + b >= 11) coppie.push([a, b]);
+      }
+    }
+    let scelta;
+    do {
+      scelta = coppie[Math.floor(Math.random() * coppie.length)];
+    } while (scelta.join("+") === riportoUltimaSomma && coppie.length > 1);
+    riportoUltimaSomma = scelta.join("+");
+    return scelta;
+  }
+
+  // Risultato giusto + 5 sbagliati "vicini" (tra 10 e 19), in ordine casuale.
+  function generaRisposteRiporto(totale) {
+    const candidati = [];
+    for (let n = 10; n <= 19; n++) {
+      if (n !== totale) candidati.push({ n, r: Math.random() });
+    }
+    candidati.sort((x, y) => Math.abs(x.n - totale) - Math.abs(y.n - totale) || x.r - y.r);
+    return mescola([totale].concat(candidati.slice(0, 5).map((c) => c.n)));
+  }
+
+  function creaZoneRiporto(a, b) {
+    return {
+      fuori: [
+        { id: 1, colore: "a", len: a },
+        { id: 2, colore: "b", len: b },
+      ],
+      scatola: [],
+      riporto: [],
+    };
+  }
+
+  function sommaQuadretti(pezzi) {
+    return pezzi.reduce((tot, p) => tot + p.len, 0);
+  }
+
+  function avviaRiporto(gameId) {
+    const gioco = GAMES.find((g) => g.id === gameId);
+    if (!gioco || !gioco.attivo) return;
+
+    const [a, b] = generaSommaRiporto();
+    stato = {
+      gameId,
+      tipo: "riporto",
+      a,
+      b,
+      totale: a + b,
+      risposte: generaRisposteRiporto(a + b),
+      zone: creaZoneRiporto(a, b),
+      prossimoId: 3,
+      selezionato: null,
+      fase: "gioco", // "gioco" -> "risposte" -> "finito"
+      sbagliate: [],
+      messaggio: "",
+      accumulatoMs: 0,
+      inCorso: false,
+      inizioSegmento: null,
+      cronometroEl: el.riportoCronometro,
+    };
+
+    el.riportoCronometro.textContent = formattaTempo(0);
+    renderRiporto();
+    mostraSchermo("riporto");
+    avviaCountdownRiporto(() => avviaCronometro());
+  }
+
+  function ricominciaRiporto() {
+    if (!stato || stato.tipo !== "riporto") return;
+    clearInterval(timerIntervalId);
+    annullaDragRiporto();
+    stato.zone = creaZoneRiporto(stato.a, stato.b);
+    stato.prossimoId = 3;
+    stato.selezionato = null;
+    stato.fase = "gioco";
+    stato.sbagliate = [];
+    stato.messaggio = "";
+    stato.accumulatoMs = 0;
+    stato.inCorso = false;
+    stato.inizioSegmento = null;
+    el.riportoCronometro.textContent = formattaTempo(0);
+    renderRiporto();
+    mostraSchermo("riporto");
+    avviaCountdownRiporto(() => avviaCronometro());
+  }
+
+  function nuovaSfidaRiporto() {
+    if (!stato) return;
+    annullaDragRiporto();
+    avviaRiporto(stato.gameId);
+  }
+
+  // Dove far vedere il taglio per arrivare a 10 (aiuto opzionale).
+  function puntoTaglioAiuto() {
+    const z = stato.zone;
+    const nScatola = sommaQuadretti(z.scatola);
+    if (nScatola > CELLE_SCATOLA) {
+      let acc = 0;
+      for (const p of z.scatola) {
+        if (acc < CELLE_SCATOLA && acc + p.len > CELLE_SCATOLA) {
+          return { id: p.id, k: CELLE_SCATOLA - acc };
+        }
+        acc += p.len;
+      }
+      return null;
+    }
+    if (nScatola < CELLE_SCATOLA) {
+      const serve = CELLE_SCATOLA - nScatola;
+      const candidati = z.fuori.concat(z.riporto);
+      if (candidati.some((p) => p.len === serve)) return null;
+      const da = candidati.find((p) => p.len > serve);
+      return da ? { id: da.id, k: serve } : null;
+    }
+    return null;
+  }
+
+  function creaPezzoEl(p, aiutoTaglio) {
+    const d = document.createElement("div");
+    d.className = "pezzo pezzo--" + p.colore;
+    if (stato.selezionato === p.id) d.classList.add("selezionato");
+    if (stato.fase === "finito") d.classList.add("pezzo--bloccato");
+    d.dataset.id = String(p.id);
+    d.style.width = `calc(${p.len} * var(--cella))`;
+    if (stato.fase !== "finito") {
+      for (let k = 1; k < p.len; k++) {
+        const t = document.createElement("span");
+        t.className = "taglio";
+        t.dataset.id = String(p.id);
+        t.dataset.k = String(k);
+        t.style.left = `calc(${k} * var(--cella))`;
+        if (aiutoTaglio && aiutoTaglio.id === p.id && aiutoTaglio.k === k) {
+          t.classList.add("taglio--aiuto");
+        }
+        d.appendChild(t);
+      }
+    }
+    return d;
+  }
+
+  function renderZonaRiporto(contenitore, pezzi, aiutoTaglio) {
+    contenitore.innerHTML = "";
+    pezzi.forEach((p) => contenitore.appendChild(creaPezzoEl(p, aiutoTaglio)));
+  }
+
+  function renderRiporto() {
+    const s = stato;
+    const nScatola = sommaQuadretti(s.zone.scatola);
+    const nRiporto = sommaQuadretti(s.zone.riporto);
+    const aiuto = riportoAiuto && s.fase !== "finito" ? puntoTaglioAiuto() : null;
+
+    el.riportoSomma.innerHTML =
+      `<span class="rip-n rip-n--a">${s.a}</span><span class="rip-op">+</span>` +
+      `<span class="rip-n rip-n--b">${s.b}</span><span class="rip-op">=</span>` +
+      `<span class="rip-ris">${s.fase === "finito" ? s.totale : "?"}</span>`;
+    el.riportoMessaggio.textContent = s.messaggio;
+
+    renderZonaRiporto(el.riportoPezziFuori, s.zone.fuori, aiuto);
+    renderZonaRiporto(el.riportoPezziScatola, s.zone.scatola, aiuto);
+    renderZonaRiporto(el.riportoPezziRiporto, s.zone.riporto, aiuto);
+
+    el.riportoContatoreScatola.textContent = `${nScatola} / ${CELLE_SCATOLA}`;
+    el.riportoContatoreScatola.className =
+      "riporto-contatore" +
+      (nScatola === CELLE_SCATOLA ? " ok" : nScatola > CELLE_SCATOLA ? " troppo" : "");
+    el.riportoContatoreRiporto.textContent = String(nRiporto);
+    el.riportoContatoreRiporto.className =
+      "riporto-contatore" + (nRiporto > CELLE_RIPORTO ? " troppo" : "");
+    el.riportoEsce.hidden = nScatola <= CELLE_SCATOLA;
+
+    el.riportoContenuto.classList.toggle("senza-numeri", !riportoMostraNumeri);
+
+    const mostraRisposte = s.fase !== "gioco";
+    el.riportoRisposteCard.hidden = !mostraRisposte;
+    if (mostraRisposte) {
+      el.riportoDomanda.textContent =
+        s.fase === "finito"
+          ? `Bravo! ${s.a} + ${s.b} = ${s.totale} · ${formattaTempo(tempoTrascorsoMs())}`
+          : `Quanto fa ${s.a} + ${s.b}?`;
+      el.riportoRisposte.innerHTML = "";
+      s.risposte.forEach((n) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "riporto-risposta";
+        b.textContent = String(n);
+        if (s.sbagliate.includes(n)) {
+          b.classList.add("sbagliata");
+          b.disabled = true;
+        }
+        if (s.fase === "finito") {
+          b.disabled = true;
+          if (n === s.totale) b.classList.add("giusta");
+        }
+        b.addEventListener("click", () => rispondiRiporto(n));
+        el.riportoRisposte.appendChild(b);
+      });
+    }
+
+    el.riportoBtnControlla.textContent =
+      s.fase === "finito" ? "💾 Salva il tempo" : "✅ CONTROLLA";
+  }
+
+  // Dopo ogni spostamento/taglio: se la scatola ha esattamente 10 quadretti
+  // e non resta nulla fuori (quindi il riporto e' giusto) compaiono le
+  // risposte; il gioco NON finisce qui.
+  function aggiornaRiporto() {
+    const s = stato;
+    if (s.fase !== "finito") {
+      const valido =
+        sommaQuadretti(s.zone.scatola) === CELLE_SCATOLA && sommaQuadretti(s.zone.fuori) === 0;
+      if (valido) {
+        if (s.fase !== "risposte") {
+          s.fase = "risposte";
+          s.sbagliate = [];
+          s.messaggio = TESTO_PERFETTO;
+        }
+      } else {
+        s.fase = "gioco";
+        s.sbagliate = [];
+        s.messaggio = "";
+      }
+    }
+    renderRiporto();
+  }
+
+  function trovaPezzoRiporto(id) {
+    for (const zona of ["fuori", "scatola", "riporto"]) {
+      const i = stato.zone[zona].findIndex((p) => p.id === id);
+      if (i >= 0) return { zona, i, pezzo: stato.zone[zona][i] };
+    }
+    return null;
+  }
+
+  function muoviPezzoRiporto(id, zonaDest) {
+    if (!stato || stato.tipo !== "riporto" || stato.fase === "finito") return;
+    const trovato = trovaPezzoRiporto(id);
+    if (!trovato) return;
+    stato.selezionato = null;
+    if (trovato.zona !== zonaDest) {
+      stato.zone[trovato.zona].splice(trovato.i, 1);
+      stato.zone[zonaDest].push(trovato.pezzo); // uno dopo l'altro da sinistra
+    }
+    aggiornaRiporto();
+  }
+
+  function spezzaPezzoRiporto(id, k) {
+    if (!stato || stato.tipo !== "riporto" || stato.fase === "finito") return;
+    const trovato = trovaPezzoRiporto(id);
+    if (!trovato || k < 1 || k >= trovato.pezzo.len) return;
+    const { zona, i, pezzo } = trovato;
+    const sinistro = { id: stato.prossimoId++, colore: pezzo.colore, len: k };
+    const destro = { id: stato.prossimoId++, colore: pezzo.colore, len: pezzo.len - k };
+    stato.zone[zona].splice(i, 1, sinistro, destro);
+    stato.selezionato = null;
+    aggiornaRiporto();
+  }
+
+  function controllaRiporto() {
+    if (!stato || stato.tipo !== "riporto") return;
+    if (stato.fase === "finito") {
+      mostraRisultati();
+      return;
+    }
+    const nScatola = sommaQuadretti(stato.zone.scatola);
+    const nFuori = sommaQuadretti(stato.zone.fuori);
+    if (stato.fase === "risposte") {
+      stato.messaggio = TESTO_PERFETTO;
+    } else if (nScatola > CELLE_SCATOLA) {
+      stato.messaggio = "Il bastoncino esce dalla scatola: spezzalo dove finisce il 10!";
+    } else if (nScatola === CELLE_SCATOLA && nFuori > 0) {
+      stato.messaggio = "Scatola piena! Ora sposta l'avanzo nella scatola del riporto.";
+    } else if (nFuori === 0) {
+      stato.messaggio = "La scatola deve contenere esattamente 10 quadretti.";
+    } else {
+      stato.messaggio = "Sposta i bastoncini nella scatola da 10 per riempirla.";
+    }
+    renderRiporto();
+  }
+
+  function rispondiRiporto(n) {
+    if (!stato || stato.tipo !== "riporto" || stato.fase !== "risposte") return;
+    if (n === stato.totale) {
+      pausaCronometro();
+      stato.fase = "finito";
+      stato.selezionato = null;
+      stato.messaggio = "";
+    } else {
+      if (!stato.sbagliate.includes(n)) stato.sbagliate.push(n);
+      stato.messaggio = "No, riprova! Conta 10 nella scatola più il riporto.";
+    }
+    renderRiporto();
+  }
+
+  // --- Trascinamento (mouse e touch) e tocco: pezzo -> zona ---
+
+  function zonaSottoPuntatore(x, y) {
+    const e = document.elementFromPoint(x, y);
+    return e ? e.closest("[data-zona]") : null;
+  }
+
+  function evidenziaZonaDrop(card) {
+    $$(".riporto-card.zona-drop").forEach((c) => {
+      if (c !== card) c.classList.remove("zona-drop");
+    });
+    if (card) card.classList.add("zona-drop");
+  }
+
+  function annullaDragRiporto() {
+    document.removeEventListener("pointermove", mossaPuntatoreRiporto);
+    document.removeEventListener("pointerup", rilascioPuntatoreRiporto);
+    document.removeEventListener("pointercancel", annullaDragRiporto);
+    if (riportoDrag && riportoDrag.clone) riportoDrag.clone.remove();
+    evidenziaZonaDrop(null);
+    riportoDrag = null;
+  }
+
+  function pressionePuntatoreRiporto(e) {
+    if (!stato || stato.tipo !== "riporto" || stato.fase === "finito") return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const pezzoEl = e.target.closest(".pezzo");
+    if (!pezzoEl) return;
+    // Se si preme proprio su una linea di taglio: un semplice tocco spezza il
+    // pezzo, ma trascinando si sposta comunque tutto il pezzo.
+    const taglioEl = e.target.closest(".taglio");
+    annullaDragRiporto();
+    const rect = pezzoEl.getBoundingClientRect();
+    riportoDrag = {
+      id: Number(pezzoEl.dataset.id),
+      taglio: taglioEl ? Number(taglioEl.dataset.k) : null,
+      origine: pezzoEl,
+      startX: e.clientX,
+      startY: e.clientY,
+      offX: e.clientX - rect.left,
+      offY: e.clientY - rect.top,
+      attivo: false,
+      clone: null,
+    };
+    document.addEventListener("pointermove", mossaPuntatoreRiporto);
+    document.addEventListener("pointerup", rilascioPuntatoreRiporto);
+    document.addEventListener("pointercancel", annullaDragRiporto);
+  }
+
+  function mossaPuntatoreRiporto(e) {
+    const d = riportoDrag;
+    if (!d) return;
+    if (!d.attivo) {
+      if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < SOGLIA_DRAG_PX) return;
+      d.attivo = true;
+      const clone = d.origine.cloneNode(true);
+      clone.classList.remove("selezionato");
+      clone.classList.add("pezzo--drag");
+      clone.querySelectorAll(".taglio").forEach((t) => t.remove());
+      document.body.appendChild(clone);
+      d.clone = clone;
+      d.origine.classList.add("trascinato");
+    }
+    d.clone.style.left = e.clientX - d.offX + "px";
+    d.clone.style.top = e.clientY - d.offY + "px";
+    evidenziaZonaDrop(zonaSottoPuntatore(e.clientX, e.clientY));
+  }
+
+  function rilascioPuntatoreRiporto(e) {
+    const d = riportoDrag;
+    if (!d) return;
+    const attivo = d.attivo;
+    const id = d.id;
+    const card = attivo ? zonaSottoPuntatore(e.clientX, e.clientY) : null;
+    annullaDragRiporto();
+    if (attivo) {
+      riportoUltimoDragMs = performance.now();
+      if (card) muoviPezzoRiporto(id, card.dataset.zona);
+      else renderRiporto();
+      return;
+    }
+    // Se c'e' gia' un pezzo sollevato e si tocca un pezzo di un'altra zona, vale
+    // come toccare quella zona (il pezzo sollevato ci viene spostato).
+    const sollevato = stato.selezionato !== null ? trovaPezzoRiporto(stato.selezionato) : null;
+    const toccato = trovaPezzoRiporto(id);
+    if (sollevato && toccato && sollevato.zona !== toccato.zona) {
+      muoviPezzoRiporto(stato.selezionato, toccato.zona);
+      return;
+    }
+    if (d.taglio !== null) {
+      spezzaPezzoRiporto(id, d.taglio);
+      return;
+    }
+    // Tocco semplice: il pezzo si solleva (o si rimette giu'); poi si tocca la zona.
+    stato.selezionato = stato.selezionato === id ? null : id;
+    renderRiporto();
+  }
+
+  function clickRiporto(e) {
+    if (!stato || stato.tipo !== "riporto" || stato.fase === "finito") return;
+    if (performance.now() - riportoUltimoDragMs < 100) return;
+    if (e.target.closest(".pezzo") || e.target.closest(".riporto-risposta")) return;
+    const card = e.target.closest("[data-zona]");
+    if (card && stato.selezionato !== null) muoviPezzoRiporto(stato.selezionato, card.dataset.zona);
+  }
+
+  function costruisciNumeriRiporto() {
+    const riempi = (contenitore, n) => {
+      contenitore.innerHTML = "";
+      for (let i = 1; i <= n; i++) {
+        const sp = document.createElement("span");
+        sp.textContent = String(i);
+        contenitore.appendChild(sp);
+      }
+    };
+    riempi(el.riportoNumeriScatola, CELLE_SCATOLA);
+    riempi(el.riportoNumeriRiporto, CELLE_RIPORTO);
+  }
+
   // ---------- Uscita dal gioco ----------
 
   function esciDalGioco() {
     clearInterval(timerIntervalId);
+    annullaDragRiporto();
     stato = null;
     renderHome();
     mostraSchermo("home");
@@ -963,6 +1436,7 @@
     if (stato.tipo === "lettura") ricominciaLettura();
     else if (stato.tipo === "fette") ricominciaFette();
     else if (stato.tipo === "lettere") ricominciaLettereSpeculari();
+    else if (stato.tipo === "riporto") ricominciaRiporto();
     else ricominciaAbbinamento();
   }
 
@@ -971,6 +1445,7 @@
     if (stato.tipo === "lettura") nuovaSfidaLettura();
     else if (stato.tipo === "fette") nuovaSfidaFette();
     else if (stato.tipo === "lettere") nuovaSfidaLettereSpeculari();
+    else if (stato.tipo === "riporto") nuovaSfidaRiporto();
     else nuovaSfidaAbbinamento();
   }
 
@@ -1001,6 +1476,23 @@
     el.lettereBtnRicomincia.addEventListener("click", ricominciaLettereSpeculari);
     el.lettereBtnNuovaSfida.addEventListener("click", nuovaSfidaLettereSpeculari);
     el.lettereBtnEsci.addEventListener("click", esciDalGioco);
+
+    // gioco 7: somme col riporto
+    costruisciNumeriRiporto();
+    el.riportoBtnRicomincia.addEventListener("click", ricominciaRiporto);
+    el.riportoBtnNuovaSfida.addEventListener("click", nuovaSfidaRiporto);
+    el.riportoBtnControlla.addEventListener("click", controllaRiporto);
+    el.riportoBtnEsci.addEventListener("click", esciDalGioco);
+    el.riportoContenuto.addEventListener("pointerdown", pressionePuntatoreRiporto);
+    el.riportoContenuto.addEventListener("click", clickRiporto);
+    el.riportoOptNumeri.addEventListener("change", () => {
+      riportoMostraNumeri = el.riportoOptNumeri.checked;
+      if (stato && stato.tipo === "riporto") renderRiporto();
+    });
+    el.riportoOptAiuto.addEventListener("change", () => {
+      riportoAiuto = el.riportoOptAiuto.checked;
+      if (stato && stato.tipo === "riporto") renderRiporto();
+    });
 
     // risultati (condivisi)
     el.btnSalva.addEventListener("click", salvaRecordCorrente);
