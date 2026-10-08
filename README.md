@@ -210,8 +210,9 @@ bastoncini a quadretti della stessa lunghezza dei numeri.
    rovescia), **Nuova sfida** genera numeri nuovi (mai la stessa somma di
    quella appena fatta) e azzera il tempo.
 
-Opzione sotto il gioco: **🔢 Mostra i numeri** (numeri 1-10 / 1-8 sotto le
-scatole, acceso di default).
+Accanto al titolo c'è l'interruttore **🔢 Numeri** (mostra/nasconde i numeri
+1-10 / 1-8 sotto le scatole, acceso di default). La schermata ha margini e
+spazi ridotti per stare in pagina senza scorrere anche su un tablet.
 
 Non usa nessun file di parole: i numeri sono generati dal codice
 (`js/app.js`, sezione "GIOCO 7").

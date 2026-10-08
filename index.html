@@ -150,10 +150,17 @@
   </section>
 
   <!-- SCHERMATA GIOCO 7: Somme col riporto -->
-  <section id="schermo-riporto" class="screen">
+  <section id="schermo-riporto" class="screen screen--riporto">
     <div class="gioco gioco--ampio">
-      <div class="gioco__header">
-        <div class="gioco__titolo">🧮 Somme col riporto</div>
+      <div class="gioco__header gioco__header--compatto">
+        <div class="riporto-titolo-gruppo">
+          <div class="gioco__titolo">🧮 Somme col riporto</div>
+          <label class="riporto-interruttore" title="Mostra o nascondi i numeri sotto le scatole">
+            <input id="riporto-opt-numeri" type="checkbox" role="switch" checked />
+            <span class="riporto-interruttore__traccia" aria-hidden="true"></span>
+            <span class="riporto-interruttore__testo">🔢 Numeri</span>
+          </label>
+        </div>
         <div id="riporto-cronometro" class="cronometro">0.0s</div>
       </div>
 
@@ -210,11 +217,7 @@
         </div>
       </div>
 
-      <div class="riporto-opzioni">
-        <label class="riporto-opzione"><input id="riporto-opt-numeri" type="checkbox" checked /> 🔢 Mostra i numeri</label>
-      </div>
-
-      <div class="gioco__azioni">
+      <div class="gioco__azioni riporto-azioni">
         <button id="riporto-btn-ricomincia" class="btn-secondario">🔁 Ricomincia</button>
         <button id="riporto-btn-nuova-sfida" class="btn-secondario">🎲 Nuova sfida</button>
         <button id="riporto-btn-controlla" class="btn-primario">✅ CONTROLLA</button>
