@@ -6,6 +6,10 @@
   const STORAGE_RECORDS = "leggoATempo:records:v2";
   const STORAGE_NOMI = "leggoATempo:nomi";
   const MAX_NOMI_RICORDATI = 12;
+  const STORAGE_FRASI_RECENTI = "leggoATempo:frasiRecenti";
+  // Una frase gia' giocata non puo' riuscire prima che siano passate almeno
+  // 20 giocate diverse (la memoria resta anche se si chiude/riapre l'app).
+  const FRASI_RECENTI_DA_EVITARE = 20;
   const COUNTDOWN_STEPS = ["3", "2", "1", "VIA!"];
   const COUNTDOWN_STEP_MS = 700;
 
@@ -294,6 +298,42 @@
 
   // ---------- GIOCO 1: Leggi bisillabe piane semplici ----------
 
+  // ---------- Frasi: scelta casuale senza ripetizioni ravvicinate ----------
+
+  function chiaveFrase(frase) {
+    return frase.map((b) => b.parola).join(" ");
+  }
+
+  function leggiFrasiRecenti() {
+    try {
+      const dati = JSON.parse(localStorage.getItem(STORAGE_FRASI_RECENTI)) || {};
+      return dati;
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function salvaFrasiRecenti(dati) {
+    try {
+      localStorage.setItem(STORAGE_FRASI_RECENTI, JSON.stringify(dati));
+    } catch (e) {
+      /* storage non disponibile: si continua senza memoria */
+    }
+  }
+
+  // Sorteggio puro tra tutte le frasi, escluse le ultime 20 giocate.
+  function scegliFraseSenzaRipetizioni(gameId, pool) {
+    const dati = leggiFrasiRecenti();
+    const limite = Math.min(FRASI_RECENTI_DA_EVITARE, pool.length - 1);
+    const recenti = (dati[gameId] || []).slice(-limite);
+    const candidate = pool.filter((f) => !recenti.includes(chiaveFrase(f)));
+    const sorgente = candidate.length ? candidate : pool;
+    const frase = sorgente[Math.floor(Math.random() * sorgente.length)];
+    dati[gameId] = recenti.concat(chiaveFrase(frase)).slice(-FRASI_RECENTI_DA_EVITARE);
+    salvaFrasiRecenti(dati);
+    return frase;
+  }
+
   // Sceglie le parole/blocchetti da mostrare per un gioco di tipo "lettura"
   // o "frase": per "frase" viene scelta un'unica frase intera (ordine fisso,
   // lunghezza propria della frase), per "lettura" un set di N parole casuali.
@@ -301,8 +341,7 @@
     const pool = GAME_DATA[gioco.id];
     if (!pool) return null;
     if (gioco.tipo === "frase") {
-      const frase = pool[Math.floor(Math.random() * pool.length)];
-      return frase.slice();
+      return scegliFraseSenzaRipetizioni(gioco.id, pool).slice();
     }
     return mescola(pool).slice(0, PAROLE_PER_PARTITA_LETTURA);
   }

@@ -83,7 +83,10 @@ Per aiutare il bambino a riconoscere le diverse parti della frase, i
 testo). Tutti i blocchetti, comprese le congiunzioni (es. "e", "ma",
 "mentre"), mostrano sempre il suggerimento sillabico sotto la parola.
 **Ricomincia** rilegge la stessa frase da capo, **nuova sfida** ne
-sceglie una diversa a caso dall'elenco. Le frasi si trovano in
+sceglie una diversa a caso dall'elenco (150 frasi): il sorteggio è casuale ma
+il gioco ricorda le ultime 20 frasi giocate su quel dispositivo (anche dopo
+aver chiuso e riaperto l'app, in `localStorage`) e non le ripropone prima che
+siano passate 20 giocate diverse. Le frasi si trovano in
 `js/games/frasi.js`; per aggiungerne altre basta aggiungere un nuovo
 elenco di blocchetti seguendo lo stesso formato.
 
