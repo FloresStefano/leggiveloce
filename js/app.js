@@ -303,10 +303,8 @@
     stato.inizioSegmento = performance.now();
     aggiornaDisplayCronometro();
     timerIntervalId = setInterval(aggiornaDisplayCronometro, 100);
-    if (stato.tipo === "lettura") {
-      el.btnPausa.textContent = "⏸️ Pausa";
-      if (window.Ascolto) window.Ascolto.riprendi();
-    }
+    if (stato.tipo === "lettura") el.btnPausa.textContent = "⏸️ Pausa";
+    if ((stato.tipo === "lettura" || stato.tipo === "fette") && window.Ascolto) window.Ascolto.riprendi();
   }
 
   function pausaCronometro() {
@@ -316,10 +314,8 @@
     stato.inizioSegmento = null;
     clearInterval(timerIntervalId);
     aggiornaDisplayCronometro();
-    if (stato.tipo === "lettura") {
-      el.btnPausa.textContent = "▶️ Riprendi";
-      if (window.Ascolto) window.Ascolto.pausa();
-    }
+    if (stato.tipo === "lettura") el.btnPausa.textContent = "▶️ Riprendi";
+    if ((stato.tipo === "lettura" || stato.tipo === "fette") && window.Ascolto) window.Ascolto.pausa();
   }
 
   function togglePausa() {
@@ -696,6 +692,8 @@
       fetta,
       paroleSelezionate,
       sillabaScelta: null,
+      sillabaBloccata: false,
+      ordineGriglia: [],
       trovate: 0,
       accumulatoMs: 0,
       inCorso: false,
@@ -706,6 +704,7 @@
     el.fetteCronometro.textContent = formattaTempo(0);
     el.fetteMessaggio.textContent = "";
     renderFette(fetta, paroleSelezionate);
+    apriAscoltoFette();
     mostraSchermo("fette");
     avviaCountdownFette(() => avviaCronometro());
   }
@@ -730,6 +729,7 @@
     });
 
     const paroleMescolate = mescola(paroleSelezionate);
+    stato.ordineGriglia = paroleMescolate; // stesso ordine delle caselle (serve all'ascolto)
     el.fetteParoleGriglia.innerHTML = "";
     paroleMescolate.forEach((p) => {
       const tile = document.createElement("button");
@@ -739,18 +739,58 @@
       tile.addEventListener("click", () => gestisciClickParolaFette(p.posizione, tile));
       el.fetteParoleGriglia.appendChild(tile);
     });
+
+    preselezionaSillabaFette();
   }
 
-  // Sceglie quale sillaba (1, 2 o 3) usare per questa partita: una volta
-  // scelta resta fissa per tutta la partita (non si puo' cambiare idea).
+  // All'inizio una delle 3 sillabe e' gia' scelta a caso. Il bambino puo'
+  // ancora toccarne un'altra, ma solo finche' non sceglie la prima parola:
+  // da quel momento la sillaba resta fissa per tutta la partita.
+  function preselezionaSillabaFette() {
+    if (!stato || stato.tipo !== "fette") return;
+    const bottoni = $$(".abbina-tile", el.fetteSillabeScelta);
+    if (!bottoni.length) return;
+    const i = Math.floor(Math.random() * bottoni.length);
+    stato.sillabaBloccata = false;
+    scegliSillabaFette(i + 1, bottoni[i]);
+  }
+
   function scegliSillabaFette(posizione, elemento) {
-    if (!stato || stato.tipo !== "fette" || stato.sillabaScelta) return;
+    if (!stato || stato.tipo !== "fette" || stato.sillabaBloccata) return;
     stato.sillabaScelta = posizione;
+    $$(".abbina-tile", el.fetteSillabeScelta).forEach((t) => t.classList.remove("selezionata"));
+    elemento.classList.add("selezionata");
+    el.fetteMessaggio.textContent = "";
+  }
+
+  function bloccaSillabaFette() {
+    stato.sillabaBloccata = true;
     $$(".abbina-tile", el.fetteSillabeScelta).forEach((t) => {
       t.disabled = true;
     });
-    elemento.classList.add("selezionata");
-    el.fetteMessaggio.textContent = "";
+  }
+
+  // Ascolto a voce (js/ascolto.js): ogni parola della griglia detta ad alta
+  // voce vale come toccarla a mano (giusta o sbagliata, stesse regole).
+  function apriAscoltoFette() {
+    if (!window.Ascolto || !stato) return;
+    const gioco = GAMES.find((g) => g.id === stato.gameId);
+    const partita = stato;
+    window.Ascolto.apri({
+      modo: "selezione",
+      schermo: "fette",
+      abilitato: !!(gioco && gioco.ascolto),
+      parole: partita.ordineGriglia,
+      inCorso: () => stato === partita && partita.inCorso,
+      inPausa: () => stato === partita && !partita.inCorso && partita.accumulatoMs > 0,
+      alTrovata: (i) => {
+        if (stato !== partita) return;
+        const tile = el.fetteParoleGriglia.children[i];
+        // la voce non "declicca" e non tocca le parole gia' decise
+        if (!tile || tile.classList.contains("corretta") || tile.classList.contains("errore")) return;
+        gestisciClickParolaFette(partita.ordineGriglia[i].posizione, tile);
+      },
+    });
   }
 
   function gestisciClickParolaFette(posizioneParola, elemento) {
@@ -761,6 +801,7 @@
       el.fetteMessaggio.textContent = "Scegli prima una sillaba qui sopra!";
       return;
     }
+    if (!stato.sillabaBloccata) bloccaSillabaFette();
 
     // Un blocchetto gia' segnato come errore si "declicca" tornando neutro,
     // cosi' il bambino puo' correggersi e riprovare.
@@ -777,6 +818,7 @@
 
       if (stato.trovate >= PAROLE_PER_PARTITA_FETTE) {
         pausaCronometro();
+        if (window.Ascolto) window.Ascolto.chiudi();
         mostraRisultati();
       }
     } else {
@@ -792,10 +834,12 @@
     stato.inCorso = false;
     stato.inizioSegmento = null;
     stato.sillabaScelta = null;
+    stato.sillabaBloccata = false;
     stato.trovate = 0;
     el.fetteCronometro.textContent = formattaTempo(0);
     el.fetteMessaggio.textContent = "";
     renderFette(stato.fetta, stato.paroleSelezionate);
+    apriAscoltoFette();
     mostraSchermo("fette");
     avviaCountdownFette(() => avviaCronometro());
   }

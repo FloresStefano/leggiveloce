@@ -93,7 +93,15 @@
   <section id="schermo-fette" class="screen">
     <div class="gioco">
       <div class="gioco__header">
-        <div class="gioco__titolo">🍕 Parola a fette</div>
+        <div class="titolo-gruppo">
+          <div class="gioco__titolo">🍕 Parola a fette</div>
+          <label id="fette-ascolto-interruttore" class="interruttore" hidden title="Ascolto: dì le parole ad alta voce per sceglierle, oppure toccale.">
+            <input id="fette-ascolto-opt" type="checkbox" role="switch" checked />
+            <span class="interruttore__traccia" aria-hidden="true"></span>
+            <span class="interruttore__testo">🎤 Ascolto</span>
+          </label>
+          <span id="fette-ascolto-stato" class="ascolto-stato" aria-live="polite" hidden></span>
+        </div>
         <div id="fette-cronometro" class="cronometro">0.0s</div>
       </div>
 
@@ -103,10 +111,10 @@
             <div id="fette-parola-tile" class="parola-tile"></div>
           </div>
 
-          <p class="abbina-istruzioni">Scegli quale sillaba vuoi usare per giocare:</p>
+          <p class="abbina-istruzioni">Ho scelto una sillaba per te! Se vuoi, toccane un'altra prima di cominciare:</p>
           <div id="fette-sillabe-scelta" class="fette-sillabe-scelta"></div>
 
-          <p class="abbina-istruzioni">Trova le 5 parole con quella sillaba, più veloce che puoi:</p>
+          <p class="abbina-istruzioni">Trova le 5 parole con quella sillaba, dicendole ad alta voce o toccandole, più veloce che puoi:</p>
           <div id="fette-parole-griglia" class="fette-parole-griglia"></div>
         </div>
 

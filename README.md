@@ -28,9 +28,10 @@ dispositivo (`localStorage`).
    su quel gioco: viene aggiornato solo se il nuovo tentativo è più
    veloce.
 
-### 🎤 Ascolto a voce (opzionale, solo Gioco 1)
+### 🎤 Ascolto a voce (opzionale: Giochi 1, 3, 4 e 5)
 
-Nel Gioco 1 c'è un interruttore **🎤 Ascolto** accanto al titolo (non c'è
+Nei Giochi 1 (Bisillabe), 3 (Trisillabe), 4 (Leggi una frase) e 5 (Parola
+a fette) c'è un interruttore **🎤 Ascolto** accanto al titolo (non c'è
 nella home). Parte **acceso a ogni avvio del gioco dalla home** e si
 spegne da solo quando la partita finisce. È un di più: il gioco funziona
 come sempre anche con l'interruttore spento, con il browser che non
@@ -49,8 +50,16 @@ supporta il riconoscimento vocale o con il microfono negato.
   compare la schermata del tempo; oppure **FINE** a mano, come prima.
 - Durante il conto alla rovescia e in pausa la voce è ignorata. L'interruttore
   spento disattiva tutto (voce, tocco e doppio tocco).
-- Il codice è in `js/ascolto.js`; si abilita per un gioco di tipo
-  "lettura" con `ascolto: true` in `js/games.js`.
+- **Leggi una frase**: se una parola compare più volte nella frase (es.
+  "il", "la") va detta altrettante volte per evidenziarle tutte.
+- **Parola a fette** (Gioco 5): niente tocchi speciali, perché toccare una
+  parola serve già a sceglierla. Ogni parola detta ad alta voce tra quelle
+  della griglia vale come toccarla: se ha la sillaba giusta diventa verde,
+  altrimenti rossa, con le stesse regole di sempre. La voce non "declicca"
+  mai una parola rossa (si fa solo toccandola) e non tocca quelle già
+  decise. Trovate le 5 giuste, il gioco finisce come prima.
+- Il codice è in `js/ascolto.js`; si abilita per un gioco con
+  `ascolto: true` in `js/games.js` (tipo "lettura", "frase" o "fette").
 
 **Privacy e limiti**: usa la Web Speech API del browser. Nella modalità
 predefinita l'audio è elaborato da un servizio esterno (Google su Chrome,
@@ -133,14 +142,19 @@ sempre minuscole e senza punteggiatura.
    trisillaba (es. "matita"), con la sua struttura sillabica sotto, come
    nelle altre letture.
 2. Poco sotto ci sono 3 blocchetti piccoli e compatti con le 3 sillabe
-   della parola (es. "ma", "ti", "ta"). Il bambino ne sceglie una: quella
-   è la sillaba su cui giocherà per tutta la partita (non si può più
-   cambiare, per non confondersi a metà).
+   della parola (es. "ma", "ti", "ta"). **Una delle 3 è già scelta a
+   caso** (evidenziata): è la sillaba su cui si gioca. Il bambino può
+   toccarne un'altra, ma solo finché non sceglie la prima parola; da quel
+   momento la sillaba resta fissa per tutta la partita (per non
+   confondersi a metà). A ogni Ricomincia/Nuova sfida se ne sceglie una
+   nuova a caso.
 3. Più sotto ci sono 15 parole trisillabe, anche loro piccole e compatte
    e senza suggerimento sillabico: 5 condividono la prima sillaba della
    parola target, 5 la seconda, 5 la terza. Il bambino deve leggere e
    trovare le 5 che condividono proprio la sillaba scelta al punto 2, nel
    minor tempo possibile.
+   Le parole si possono scegliere **a mano o con la voce** (vedi
+   "Ascolto a voce"): una parola detta ad alta voce vale come toccarla.
 4. Se sbaglia, il blocchetto diventa rosso; ci si clicca sopra di nuovo
    per "correggersi" e farlo tornare normale, e si può riprovare. Se la
    scelta è giusta il blocchetto diventa verde e resta bloccato. Trovate
