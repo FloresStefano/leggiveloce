@@ -308,12 +308,33 @@ bastoncini a quadretti della stessa lunghezza dei numeri.
    l'avanzo nella scatola del riporto.", "La scatola deve contenere
    esattamente 10 quadretti.".
 5. Quando la scatola ha esattamente 10 quadretti e non resta nulla fuori
-   (quindi il riporto è giusto) il gioco **non finisce**: compare "Quanto fa
-   7 + 5?" con 6 risposte (quella giusta + 5 sbagliate vicine, tra 10 e 19,
-   in ordine casuale). Risposta sbagliata: il pulsante diventa grigio e
-   compare "No, riprova! Conta 10 nella scatola più il riporto.". Risposta
-   giusta: il cronometro si ferma, la striscia delle risposte sparisce, sotto
-   la somma compare "Bravo! 7 + 5 = 12 · 8.4s" e il "?" diventa il risultato.
+   (quindi il riporto è giusto) il gioco **non finisce**: compare in
+   evidenza la frase **"🎤 Pronuncia l'operazione per intero con il suo
+   risultato"** e il microfono si accende (non c'è più la scelta tra 6
+   risposte). Il bambino deve dire, per esempio, **"sette più cinque uguale
+   dodici"**: primo numero, più, secondo numero, uguale, risultato. Il tempo
+   continua a correre finché la frase non è giusta; quando lo è, il cronometro
+   si ferma, sotto la somma compare "Bravo! 7 + 5 = 12 · 8.4s" e dopo circa un
+   secondo si apre la finestra con le stelline.
+   - Può provare più volte e sbagliare: **non serve dire solo la frase**. La
+     frase giusta viene cercata in **tutto quello che il bambino ha detto**
+     (anche a cavallo di due pause e tra più alternative proposte dal
+     riconoscitore): può ripetere un pezzetto, dire altro, sbagliare e poi
+     dirla giusta, anche seguita da altre parole.
+   - Si accetta: numeri a parole o a cifre ("7 più 5 uguale 12" va bene);
+     "più" o "+"; "uguale", "uguale a", "è uguale a", "fa", "fanno" o "=".
+     I cinque pezzi devono essere di seguito e nell'ordine giusto
+     (primo numero come in alto, poi secondo): "cinque più sette uguale dodici"
+     o un risultato sbagliato non valgono.
+   - Sotto la frase si vede **"Ho sentito: ..."** con le ultime parole
+     riconosciute; le parole che fanno parte della frase giusta si colorano
+     (giallo = pezzo giusto ma frase non ancora completa, verde = frase giusta).
+   - Se si disfa la scatola il microfono si spegne e riparte quando è di nuovo
+     giusta. Ricomincia, Nuova sfida ed Esci lo spengono.
+   - **Ripiego senza microfono**: se il browser non supporta la voce, o il
+     permesso del microfono è negato, o il microfono non funziona, compare la
+     vecchia scelta tra 6 risposte con un messaggio che lo spiega (altrimenti il
+     gioco non potrebbe finire). Il codice dell'ascolto è in `js/ascolto-frase.js`.
 6. **Ricomincia** riparte con gli stessi numeri (rifacendo il conto alla
    rovescia), **Nuova sfida** genera numeri nuovi (mai la stessa somma di
    quella appena fatta) e azzera il tempo.
@@ -328,9 +349,16 @@ Non usa nessun file di parole: i numeri sono generati dal codice
 **Scelte fatte in autonomia, da confermare o correggere:**
 - ho aggiunto il tasto **🏠 Esci** (come in tutti gli altri giochi), non
   presente nell'elenco dei pulsanti della richiesta.
-- a risposta giusta il cronometro si ferma e compare "Bravo! 7 + 5 = 12"; dopo
+- a frase giusta il cronometro si ferma e compare "Bravo! 7 + 5 = 12"; dopo
   circa un secondo si apre la solita finestra di fine partita
   (tempo, stelline, Ripeti / Nuova / Esci).
+- ho considerato giuste anche le varianti naturali "fa"/"fanno" al posto di
+  "uguale" e le cifre al posto delle parole; **non** accetto "e" al posto di
+  "più" né i due numeri scambiati.
+- l'interruttore "🎤 Ascolto" non c'è in questo gioco: il microfono parte da solo
+  solo quando serve (a scatola giusta), perché la voce è l'unico modo di finire.
+- il test del Gioco 7 qui non può provare una voce vera: l'ho verificato con un
+  riconoscitore simulato; la resa con voci di bambini va provata sul tablet.
 - la scheda con le 6 risposte compare tra la prima e la seconda riga (come
   negli screenshot), non in fondo; appare da sola quando la scatola è
   giusta, e sparisce se il bambino rimette in disordine i pezzi.
@@ -356,6 +384,7 @@ index.html                             home, giochi 1-7, finestra di fine partit
 css/style.css                          stile grafico, responsive, per tablet
 js/games.js                            elenco dei giochi (id, tipo, attivo/non attivo)
 js/ascolto.js                          ascolto a voce opzionale (Giochi 1, 3, 4, 5, 6)
+js/ascolto-frase.js                    ascolto della frase intera "sette più cinque uguale dodici" (Gioco 7)
 js/giocatore.js                        giocatore di sessione, avatar, stelline
 js/fine-partita.js                     finestra di fine partita + coriandoli
 js/vendor/avataaars.bundle.js          generatore di avatar (DiceBear Avataaars, locale)

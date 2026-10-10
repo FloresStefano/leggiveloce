@@ -99,6 +99,8 @@
     riportoRisposteCard: $("#riporto-risposte-card"),
     riportoDomanda: $("#riporto-domanda"),
     riportoRisposte: $("#riporto-risposte"),
+    riportoAscoltoStato: $("#riporto-ascolto-stato"),
+    riportoSentito: $("#riporto-sentito"),
     riportoOptNumeri: $("#riporto-opt-numeri"),
     riportoCountdownOverlay: $("#riporto-countdown-overlay"),
     riportoCountdownTesto: $("#riporto-countdown-testo"),
@@ -1022,7 +1024,14 @@
   const CELLE_SCATOLA = 10;
   const CELLE_RIPORTO = 8;
   const SOGLIA_DRAG_PX = 8;
-  const TESTO_PERFETTO = "Perfetto! Ora scegli il risultato giusto.";
+  const FRASE_DA_DIRE = "Pronuncia l'operazione per intero con il suo risultato";
+  // Con la voce: "dire" la somma intera; senza microfono (browser che non lo
+  // supporta o permesso negato) si ripiega sulla scelta tra 6 risposte.
+  function testoPerfetto() {
+    return stato && stato.modoRisposta === "scelta"
+      ? "Perfetto! Ora scegli il risultato giusto."
+      : "Perfetto! Ora dì tutta l'operazione.";
+  }
 
   // Opzione (resta valida tra una sfida e l'altra finche' l'app e' aperta)
   let riportoMostraNumeri = true;
@@ -1093,6 +1102,7 @@
 
   function avviaRiporto(gameId) {
     riportoUltimoTaglio = null;
+    if (window.AscoltoFrase) window.AscoltoFrase.ferma();
     const gioco = GAMES.find((g) => g.id === gameId);
     if (!gioco || !gioco.attivo) return;
 
@@ -1108,6 +1118,9 @@
       prossimoId: 3,
       selezionato: null,
       fase: "gioco", // "gioco" -> "risposte" -> "finito"
+      modoRisposta: null, // "voce" (frase intera a voce) o "scelta" (ripiego senza microfono)
+      sentito: { parole: [], hint: "" },
+      statoAscolto: { testo: "", tipo: "" },
       sbagliate: [],
       messaggio: "",
       accumulatoMs: 0,
@@ -1126,10 +1139,12 @@
     if (!stato || stato.tipo !== "riporto") return;
     clearInterval(timerIntervalId);
     annullaDragRiporto();
+    if (window.AscoltoFrase) window.AscoltoFrase.ferma();
     stato.zone = creaZoneRiporto(stato.a, stato.b);
     stato.prossimoId = 3;
     stato.selezionato = null;
     stato.fase = "gioco";
+    stato.modoRisposta = null;
     stato.sbagliate = [];
     stato.messaggio = "";
     stato.accumulatoMs = 0;
@@ -1206,21 +1221,32 @@
 
     const mostraRisposte = s.fase === "risposte";
     el.riportoRisposteCard.hidden = !mostraRisposte;
+    el.riportoRisposteCard.classList.toggle("riporto-risposte--voce", mostraRisposte && s.modoRisposta === "voce");
     if (mostraRisposte) {
-      el.riportoDomanda.textContent = `Quanto fa ${s.a} + ${s.b}?`;
+      const aVoce = s.modoRisposta === "voce";
+      el.riportoDomanda.textContent = aVoce ? `🎤 ${FRASE_DA_DIRE}` : `Quanto fa ${s.a} + ${s.b}?`;
+      el.riportoSentito.hidden = !aVoce;
+      el.riportoRisposte.hidden = aVoce;
       el.riportoRisposte.innerHTML = "";
-      s.risposte.forEach((n) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "riporto-risposta";
-        b.textContent = String(n);
-        if (s.sbagliate.includes(n)) {
-          b.classList.add("sbagliata");
-          b.disabled = true;
-        }
-        b.addEventListener("click", () => rispondiRiporto(n));
-        el.riportoRisposte.appendChild(b);
-      });
+      if (aVoce) {
+        disegnaSentitoRiporto();
+      } else {
+        el.riportoAscoltoStato.hidden = !s.statoAscolto.testo;
+        el.riportoAscoltoStato.textContent = s.statoAscolto.testo;
+        el.riportoAscoltoStato.className = "riporto-ascolto-stato riporto-ascolto-stato--errore";
+        s.risposte.forEach((n) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "riporto-risposta";
+          b.textContent = String(n);
+          if (s.sbagliate.includes(n)) {
+            b.classList.add("sbagliata");
+            b.disabled = true;
+          }
+          b.addEventListener("click", () => rispondiRiporto(n));
+          el.riportoRisposte.appendChild(b);
+        });
+      }
     }
 
     el.riportoBtnControlla.textContent = "✅ CONTROLLA";
@@ -1238,15 +1264,94 @@
         if (s.fase !== "risposte") {
           s.fase = "risposte";
           s.sbagliate = [];
-          s.messaggio = TESTO_PERFETTO;
+          iniziaRispostaRiporto();
+          s.messaggio = testoPerfetto();
         }
       } else {
+        if (s.fase === "risposte" && window.AscoltoFrase) window.AscoltoFrase.ferma();
         s.fase = "gioco";
+        s.modoRisposta = null;
         s.sbagliate = [];
         s.messaggio = "";
       }
     }
     renderRiporto();
+  }
+
+  // ---- Risposta a voce: il bambino dice "sette più cinque uguale dodici" ----
+
+  function iniziaRispostaRiporto() {
+    const s = stato;
+    const AF = window.AscoltoFrase;
+    s.sentito = { parole: [], hint: "" };
+    s.statoAscolto = { testo: "", tipo: "" };
+    if (!AF || !AF.supportato) {
+      s.modoRisposta = "scelta";
+      s.statoAscolto = { testo: "Voce non supportata da questo browser: scegli la risposta.", tipo: "errore" };
+      return;
+    }
+    s.modoRisposta = "voce";
+    const partita = s;
+    AF.avvia({
+      bersaglio: AF.bersaglio(s.a, s.b),
+      onStato: (testo, tipo) => {
+        if (stato !== partita) return;
+        partita.statoAscolto = { testo, tipo };
+        disegnaSentitoRiporto();
+      },
+      onTesto: (t) => {
+        if (stato !== partita) return;
+        partita.sentito = { parole: t.parole, hint: "" };
+        disegnaSentitoRiporto();
+      },
+      onTrovata: () => {
+        if (stato !== partita || partita.fase !== "risposte") return;
+        rispostaGiustaRiporto();
+      },
+      onErrore: (tipo) => {
+        if (stato !== partita || partita.fase !== "risposte") return;
+        // il microfono non si puo' usare: ripiego sulla scelta multipla
+        partita.modoRisposta = "scelta";
+        partita.statoAscolto = {
+          testo:
+            tipo === "negato"
+              ? "Microfono non consentito: scegli la risposta."
+              : "Il microfono non funziona: scegli la risposta.",
+          tipo: "errore",
+        };
+        partita.messaggio = testoPerfetto();
+        renderRiporto();
+      },
+    });
+  }
+
+  // Aggiorna solo la riga "Ho sentito: ..." (senza ridisegnare i pezzi).
+  function disegnaSentitoRiporto() {
+    const s = stato;
+    if (!s || s.fase !== "risposte" || s.modoRisposta !== "voce") return;
+    const box = el.riportoSentito;
+    box.innerHTML = "";
+    const stat = document.createElement("span");
+    const tipo = s.statoAscolto.tipo === "attivo" ? "attivo" : s.statoAscolto.tipo ? "errore" : "attesa";
+    stat.className = "sentito__stato sentito__stato--" + tipo;
+    stat.textContent = s.statoAscolto.testo ? (tipo === "attivo" ? "🎤 " : "") + s.statoAscolto.testo : "🎤 …";
+    box.appendChild(stat);
+    const testo = document.createElement("span");
+    testo.className = "sentito__testo";
+    if (!s.sentito.parole.length) {
+      testo.classList.add("sentito__testo--vuoto");
+      testo.textContent = "Parla pure: qui vedrai quello che ascolto";
+    } else {
+      s.sentito.parole.forEach((p) => {
+        const w = document.createElement("span");
+        w.className = "sentito__parola" + (p.stato ? " sentito__parola--" + p.stato : "");
+        w.textContent = p.testo;
+        testo.appendChild(w);
+        testo.appendChild(document.createTextNode(" "));
+      });
+    }
+    box.appendChild(testo);
+    el.riportoAscoltoStato.hidden = true;
   }
 
   function trovaPezzoRiporto(id) {
@@ -1287,7 +1392,7 @@
     const nScatola = sommaQuadretti(stato.zone.scatola);
     const nFuori = sommaQuadretti(stato.zone.fuori);
     if (stato.fase === "risposte") {
-      stato.messaggio = TESTO_PERFETTO;
+      stato.messaggio = testoPerfetto();
     } else if (nScatola > CELLE_SCATOLA) {
       stato.messaggio = "Il bastoncino esce dalla scatola: spezzalo dove finisce il 10!";
     } else if (nScatola === CELLE_SCATOLA && nFuori > 0) {
@@ -1300,22 +1405,32 @@
     renderRiporto();
   }
 
-  function rispondiRiporto(n) {
+  // Risposta giusta (frase detta per intero, o numero scelto nel ripiego):
+  // il cronometro si ferma e si calcolano le stelline.
+  function rispostaGiustaRiporto() {
     if (!stato || stato.tipo !== "riporto" || stato.fase !== "risposte") return;
+    if (window.AscoltoFrase) window.AscoltoFrase.ferma();
+    pausaCronometro();
+    stato.fase = "finito";
+    stato.selezionato = null;
+    stato.messaggio = "";
+    // un istante per vedere il "Bravo!" e il risultato, poi si apre il modale
+    const partita = stato;
+    setTimeout(() => {
+      if (stato === partita && partita.fase === "finito") mostraModaleFine();
+    }, 1100);
+    renderRiporto();
+  }
+
+  // Ripiego senza microfono: scelta tra 6 risposte.
+  function rispondiRiporto(n) {
+    if (!stato || stato.tipo !== "riporto" || stato.fase !== "risposte" || stato.modoRisposta !== "scelta") return;
     if (n === stato.totale) {
-      pausaCronometro();
-      stato.fase = "finito";
-      stato.selezionato = null;
-      stato.messaggio = "";
-      // un istante per vedere il "Bravo!" e il risultato, poi si apre il modale
-      const partita = stato;
-      setTimeout(() => {
-        if (stato === partita && partita.fase === "finito") mostraModaleFine();
-      }, 1100);
-    } else {
-      if (!stato.sbagliate.includes(n)) stato.sbagliate.push(n);
-      stato.messaggio = "No, riprova! Conta 10 nella scatola più il riporto.";
+      rispostaGiustaRiporto();
+      return;
     }
+    if (!stato.sbagliate.includes(n)) stato.sbagliate.push(n);
+    stato.messaggio = "No, riprova! Conta 10 nella scatola più il riporto.";
     renderRiporto();
   }
 
@@ -1453,6 +1568,7 @@
   function esciDalGioco() {
     clearInterval(timerIntervalId);
     annullaDragRiporto();
+    if (window.AscoltoFrase) window.AscoltoFrase.ferma();
     if (window.Ascolto) window.Ascolto.chiudi();
     if (window.FinePartita) window.FinePartita.chiudi();
     stato = null;
