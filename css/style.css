@@ -155,12 +155,7 @@ button {
 .home-utente__nome {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.05rem;
-}
-
-.home-utente__aiuto {
-  font-size: 0.7rem;
-  opacity: 0.6;
+  font-size: 1.5rem;
 }
 
 .home-stelle {
@@ -197,7 +192,7 @@ button {
   .home-utente { grid-column: 1; }
   .home-stelle { grid-column: 2; }
   .home-stelle__numero { font-size: 2.2rem; }
-  .home-utente__nome { font-size: 0.95rem; }
+  .home-utente__nome { font-size: 1.25rem; }
 }
 
 .giochi-lista {

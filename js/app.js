@@ -109,7 +109,6 @@
     // home: giocatore e stelline
     homeUtente: $("#home-utente"),
     homeAvatar: $("#home-avatar"),
-    homeNome: $("#home-nome"),
     homeStelleTotali: $("#home-stelle-totali"),
   };
 
@@ -187,12 +186,10 @@
     });
   }
 
-  // Giocatore della sessione (avatar + soprannome) e contatore globale.
+  // Giocatore della sessione (avatar; il soprannome non si mostra, c'e' solo "Ciao!") e contatore globale.
   function renderGiocatore() {
     const G = window.Giocatore;
     el.homeAvatar.src = G.avatarSrc();
-    el.homeNome.textContent = G.nome();
-    el.homeUtente.setAttribute("aria-label", `${G.nome()}: tocca per cambiare avatar`);
     el.homeStelleTotali.textContent = G.stelleTotali();
   }
 
