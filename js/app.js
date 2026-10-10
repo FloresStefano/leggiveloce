@@ -1010,6 +1010,9 @@
   let riportoUltimaSomma = null;
   let riportoDrag = null;
   let riportoUltimoDragMs = 0;
+  // Ultimo tocco su una linea di taglio (per riconoscere il doppio tocco/click che spezza).
+  let riportoUltimoTaglio = null;
+  const DOPPIO_TAGLIO_MS = 450;
 
   function impostaBottoniRiporto(abilitati) {
     el.riportoBtnRicomincia.disabled = !abilitati;
@@ -1070,6 +1073,7 @@
   }
 
   function avviaRiporto(gameId) {
+    riportoUltimoTaglio = null;
     const gioco = GAMES.find((g) => g.id === gameId);
     if (!gioco || !gioco.attivo) return;
 
@@ -1324,8 +1328,9 @@
     if (e.pointerType === "mouse" && e.button !== 0) return;
     const pezzoEl = e.target.closest(".pezzo");
     if (!pezzoEl) return;
-    // Se si preme proprio su una linea di taglio: un semplice tocco spezza il
-    // pezzo, ma trascinando si sposta comunque tutto il pezzo.
+    // Se si preme proprio su una linea di taglio: serve un DOPPIO tocco/click
+    // (sulla stessa linea) per spezzare il pezzo; un tocco singolo vale come
+    // toccare il pezzo e trascinando si sposta tutto il pezzo.
     const taglioEl = e.target.closest(".taglio");
     annullaDragRiporto();
     const rect = pezzoEl.getBoundingClientRect();
@@ -1372,6 +1377,7 @@
     const card = attivo ? zonaSottoPuntatore(e.clientX, e.clientY) : null;
     annullaDragRiporto();
     if (attivo) {
+      riportoUltimoTaglio = null;
       riportoUltimoDragMs = performance.now();
       if (card) muoviPezzoRiporto(id, card.dataset.zona);
       else renderRiporto();
@@ -1386,8 +1392,16 @@
       return;
     }
     if (d.taglio !== null) {
-      spezzaPezzoRiporto(id, d.taglio);
-      return;
+      const ora = performance.now();
+      const u = riportoUltimoTaglio;
+      if (u && u.id === id && u.k === d.taglio && ora - u.t <= DOPPIO_TAGLIO_MS) {
+        riportoUltimoTaglio = null;
+        spezzaPezzoRiporto(id, d.taglio);
+        return;
+      }
+      riportoUltimoTaglio = { id, k: d.taglio, t: ora };
+    } else {
+      riportoUltimoTaglio = null;
     }
     // Tocco semplice: il pezzo si solleva (o si rimette giu'); poi si tocca la zona.
     stato.selezionato = stato.selezionato === id ? null : id;

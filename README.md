@@ -287,8 +287,11 @@ bastoncini a quadretti della stessa lunghezza dei numeri.
    superano il 10, la parte in più esce dalla cornice e compare "esce
    fuori! ✂️". Il contatore in alto a destra mostra "N / 10" (verde se è 10,
    rosso se è di più).
-2. **Spezzare**: si tocca/clicca la linea tra due quadretti di un
-   bastoncino (con il mouse la linea diventa scura al passaggio). I due
+2. **Spezzare**: **doppio tocco/click** sulla linea tra due quadretti di un
+   bastoncino (con il mouse la linea diventa scura al passaggio; i due tocchi
+   devono essere sulla stessa linea, a meno di mezzo secondo l'uno dall'altro).
+   Un tocco singolo non taglia e nemmeno un trascinamento, così non si taglia
+   per sbaglio mentre si sposta un pezzo. I due
    pezzi mantengono il colore.
 3. **Spostare**: i pezzi si muovono tra le tre zone (Bastoncini, Scatola da
    10, Scatola del riporto, larga 8 quadretti) trascinandoli, oppure
@@ -327,8 +330,9 @@ Non usa nessun file di parole: i numeri sono generati dal codice
 - i messaggi di aiuto compaiono solo premendo CONTROLLA; per il caso non
   previsto (scatola ancora da riempire e bastoncini ancora fuori) il testo
   è "Sposta i bastoncini nella scatola da 10 per riempirla.".
-- toccando una linea di taglio senza trascinare il pezzo si spezza;
-  trascinando da lì si sposta tutto il pezzo. Se un pezzo è già sollevato e
+- un doppio tocco su una linea di taglio spezza il pezzo; un tocco singolo
+  su una linea vale come toccare il pezzo (si solleva) e trascinando da lì si
+  sposta tutto il pezzo, senza tagliare. Se un pezzo è già sollevato e
   si tocca un pezzo di un'altra zona, vale come toccare quella zona. I pezzi
   spostati si accodano alla fine della zona (non si riordinano).
 - su schermi stretti i quadretti si rimpiccioliscono sotto i 44px (e sotto i
