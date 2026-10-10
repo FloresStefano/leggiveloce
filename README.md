@@ -2,8 +2,59 @@
 
 App web **gratuita**, senza database e senza backend, che ospiterà una
 serie di piccoli giochi per allenare la lettura dei bambini. Nessun
-account, nessun server: i record vengono salvati nel browser del
-dispositivo (`localStorage`).
+account, nessun server: le stelline e il giocatore della sessione vengono
+salvati nel browser del dispositivo (`localStorage`).
+
+## ⭐ Giocatore, stelline e fine partita (valido per tutti i giochi)
+
+**Il giocatore.** Non c'è nessun nome da digitare: a ogni sessione web è
+legato **un solo giocatore casuale**, con un soprannome (es. "Panda
+Allegro") e un **avatar** in alto a sinistra nella home. Toccando l'avatar
+lo si **rigenera** se non piace; resta comunque una relazione 1:1 con
+l'id di sessione (l'avatar è sempre calcolato dall'id, più un contatore che
+cresce solo a ogni rigenerazione, quindi lo stesso id mostra sempre lo stesso
+aspetto finché non lo si cambia). L'avatar è in stile Avataaars (come
+getavataaars.com) ma **generato in locale**, senza chiamate a servizi esterni,
+con una libreria inclusa in `js/vendor/` (DiceBear Avataaars, licenza in
+`js/vendor/LICENSE-avataaars.txt`), con opzioni adatte ai bambini (sempre
+sorridenti, niente barba/baffi, niente teschi). Il codice è in `js/giocatore.js`.
+
+**Fine partita.** Non c'è più una pagina dei risultati: quando finisce una
+partita si apre **una finestra sopra il gioco** con il tempo impiegato e le
+stelline guadagnate:
+
+| Tempo | Stelline |
+| --- | --- |
+| meno di 10 secondi | ⭐⭐⭐ |
+| meno di 20 secondi | ⭐⭐ |
+| meno di 30 secondi | ⭐ |
+| 30 secondi o più | nessuna |
+
+Con 3 stelline partono i **coriandoli**. La finestra ha solo 3 scelte:
+**Ripeti la sfida** (stesse parole/numeri, si riparte dal conto alla
+rovescia), **Nuova sfida** e **Esci** (torna alla home). Il codice è in
+`js/fine-partita.js`.
+
+**Contatori.** Nella card di ogni gioco, in home, c'è l'immagine della
+stellina con il numero di stelline accumulate in quel gioco; in alto a destra
+c'è il **totale** di tutte le stelline, nella stessa dimensione del riquadro
+dell'utente in alto a sinistra (ai lati opposti). Le stelline durano finché
+resta il salvataggio del browser (`localStorage`, chiave
+`leggoATempo:giocatore:v1`); non c'è nessun database.
+
+Le soglie sono comuni a tutti i giochi (`SOGLIE_STELLE_SECONDI` in
+`js/giocatore.js`); un gioco può averne di sue con `soglieStelle: [a, b, c]`
+in `js/games.js`.
+
+**Scelte fatte in autonomia, da confermare o correggere:**
+- la richiesta diceva "1 stellina sotto i 30 secondi, 0 oltre i 40": ho
+  considerato **0 stelline da 30 secondi in su** (nessun "buco" tra 30 e 40).
+- le stelline guadagnate si **sommano** a ogni partita (anche ripetendo lo
+  stesso gioco), non si tiene il migliore.
+- l'avatar usa solo i colori/espressioni "da bambini" e non copia l'esempio
+  del link (cappello, baffi, teschio), che sarebbe un caso a sé.
+- le vecchie classifiche e i record per nome sono stati rimossi, insieme alla
+  pagina dei risultati.
 
 ## 🎮 Gioco 1: "Bisillabe"
 
@@ -14,19 +65,16 @@ dispositivo (`localStorage`).
    nitide e parte il cronometro. Ogni parola è mostrata in grande, con la
    sua struttura sillabica (es. "ca-sa") più piccola sotto.
 2. Il bambino legge le 10 parole ad alta voce; quando ha finito preme
-   **FINE**, che ferma il cronometro e porta alla schermata dei
-   risultati.
+   **FINE**, che ferma il cronometro e apre la finestra di fine
+   partita (tempo e stelline, vedi sopra).
 3. Durante la lettura può anche: mettere in **pausa** il cronometro e
    farlo ripartire; **ricominciare** da capo con le stesse 10 parole
    (rifacendo anche il conto alla rovescia e la sfocatura); oppure
    partire con una **nuova sfida** (10 parole nuove, sempre con conto
    alla rovescia).
-4. Nella schermata risultati può **salvare il record** scrivendo il
-   proprio nome, oppure scegliere esplicitamente di **non salvarlo**. Il
-   sistema ricorda i nomi già usati su quel dispositivo e li ripropone
-   come scelte rapide. Il record per ogni bambino è il suo tempo migliore
-   su quel gioco: viene aggiornato solo se il nuovo tentativo è più
-   veloce.
+4. Nella finestra di fine partita vede il tempo e le **stelline**
+   guadagnate, e sceglie tra **Ripeti la sfida**, **Nuova sfida** ed
+   **Esci**. Nessun nome da scrivere: il giocatore è quello della sessione.
 
 ### 🎤 Ascolto a voce (opzionale: Giochi 1, 3, 4, 5 e 6)
 
@@ -83,22 +131,19 @@ di bambini e parole isolate, e arriva con circa mezzo secondo di ritardo
    è sbagliata viene mostrato un errore (rosso, si può riprovare subito).
 3. Il cronometro si ferma da solo quando tutte le 8 coppie sono state
    trovate: l'obiettivo è trovarle tutte nel minor tempo possibile, poi
-   si passa automaticamente alla schermata risultati.
-4. Come nel Gioco 1: si può salvare (o non salvare) il record, oppure
-   ricominciare con le stesse coppie (posizioni rimescolate) o con una
-   nuova sfida di 8 parole diverse.
+   si apre la finestra di fine partita.
+4. Dalla finestra: ripetere con le stesse coppie (posizioni rimescolate),
+   nuova sfida di 8 parole diverse, oppure uscire.
 
 I giochi 1 e 2 condividono lo stesso elenco di parole
-(`js/games/bisillabe-piane-semplici.js`) e la stessa classifica per-gioco
-(visibile in home, sotto ogni gioco attivo, con il tempo migliore di ogni
-bambino).
+(`js/games/bisillabe-piane-semplici.js`); le stelline si contano però
+per gioco.
 
 ## 📚 Gioco 3: "Trisillabe"
 
 Stessa identica meccanica del Gioco 1 ("Bisillabe"):
 sfocatura + conto alla rovescia "3, 2, 1, VIA!", cronometro, pausa/riprendi,
-ricomincia, nuova sfida, FINE con scelta di salvare o non salvare il
-record. L'unica differenza è la lista di parole: invece di bisillabe usa
+ricomincia, nuova sfida, FINE con la finestra di fine partita. L'unica differenza è la lista di parole: invece di bisillabe usa
 un elenco di ~190 parole italiane semplici di **tre sillabe**, tutte con
 accento piano (sulla penultima sillaba, es. "ca-VAL-lo"), scelte e
 sillabate a mano da Claude — non caricate dall'utente, ma pensate per
@@ -113,7 +158,7 @@ singolare e plurale dove possibile. La lista si trova in
 
 Stessa identica meccanica del Gioco 1 e del Gioco 3 (sfocatura + conto
 alla rovescia, cronometro, pausa/riprendi, ricomincia, nuova sfida, FINE
-con salva/non salvare record) ma invece di 10 parole casuali mostra
+con finestra di fine partita) ma invece di 10 parole casuali mostra
 **un'unica frase completa**, scelta a caso da un elenco di frasi pronte,
 scomposta negli stessi "blocchetti" (parola in grande + sillabe in
 piccolo) usati dagli altri giochi di lettura, nello stesso ordine in cui
@@ -162,8 +207,8 @@ sempre minuscole e senza punteggiatura.
 4. Se sbaglia, il blocchetto diventa rosso; ci si clicca sopra di nuovo
    per "correggersi" e farlo tornare normale, e si può riprovare. Se la
    scelta è giusta il blocchetto diventa verde e resta bloccato. Trovate
-   tutte e 5, il cronometro si ferma da solo e si passa alla schermata
-   risultati (salva/non salvare il record, come sempre).
+   tutte e 5, il cronometro si ferma da solo e si apre la finestra di
+   fine partita (tempo e stelline, come sempre).
 
 Le 3 parole target attuali (matita, cucina, panino) e le loro parole
 associate si trovano in `js/games/parola-a-fette.js`, scelte, sillabate
@@ -207,8 +252,8 @@ volta fatta, resta fissa per tutta la partita.
 4. Se sbaglia, il blocchetto diventa rosso; ci si clicca sopra di nuovo
    per "correggersi" e farlo tornare normale, e si può riprovare. Se la
    scelta è giusta il blocchetto diventa verde e resta bloccato. Trovate
-   tutte e 5, il cronometro si ferma da solo e si passa alla schermata
-   risultati (salva/non salvare il record, come sempre).
+   tutte e 5, il cronometro si ferma da solo e si apre la finestra di
+   fine partita (tempo e stelline, come sempre).
 
 Le parole si trovano in `js/games/lettere-speculari.js`, raggruppate per
 lettera (8-11 parole disponibili per lettera, verificate una per una in
@@ -273,10 +318,9 @@ Non usa nessun file di parole: i numeri sono generati dal codice
 **Scelte fatte in autonomia, da confermare o correggere:**
 - ho aggiunto il tasto **🏠 Esci** (come in tutti gli altri giochi), non
   presente nell'elenco dei pulsanti della richiesta.
-- a risposta giusta non compare nessuna finestra, come richiesto; per
-  salvare il record nella classifica (come negli altri giochi) il tasto
-  CONTROLLA diventa **💾 Salva il tempo**, che porta alla solita schermata
-  "Tempo finale" (salva / non salvare).
+- a risposta giusta il cronometro si ferma e compare "Bravo! 7 + 5 = 12"; dopo
+  circa un secondo si apre la solita finestra di fine partita
+  (tempo, stelline, Ripeti / Nuova / Esci).
 - la scheda con le 6 risposte compare tra la prima e la seconda riga (come
   negli screenshot), non in fondo; appare da sola quando la scatola è
   giusta, e sparisce se il bambino rimette in disordine i pezzi.
@@ -297,16 +341,20 @@ finché non verranno definiti e attivati.
 ## 🗂️ Struttura del progetto
 
 ```
-index.html                             home, giochi 1-7, risultati
+index.html                             home, giochi 1-7, finestra di fine partita
 css/style.css                          stile grafico, responsive, per tablet
 js/games.js                            elenco dei giochi (id, tipo, attivo/non attivo)
-js/ascolto.js                          ascolto a voce opzionale (Gioco 1)
+js/ascolto.js                          ascolto a voce opzionale (Giochi 1, 3, 4, 5, 6)
+js/giocatore.js                        giocatore di sessione, avatar, stelline
+js/fine-partita.js                     finestra di fine partita + coriandoli
+js/vendor/avataaars.bundle.js          generatore di avatar (DiceBear Avataaars, locale)
+img/stella.svg, img/stella-vuota.svg   stelline
 js/games/bisillabe-piane-semplici.js   le parole usate dai giochi 1 e 2
 js/games/trisillabe-piane.js           le parole usate dal gioco 3
 js/games/frasi.js                      le frasi usate dal gioco 4
 js/games/parola-a-fette.js             le parole target + parole associate usate dal gioco 5
 js/games/lettere-speculari.js          le parole (per lettera b/d/p/q) usate dal gioco 6
-js/app.js                              logica: cronometro, tutte le meccaniche, record
+js/app.js                              logica: cronometro, tutte le meccaniche, home
 manifest.json                          per "Aggiungi a Home" su tablet/telefono
 icon.svg                               icona dell'app
 ```

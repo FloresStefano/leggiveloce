@@ -23,9 +23,26 @@
 
   <!-- SCHERMATA HOME -->
   <section id="schermo-home" class="screen attivo">
-    <div class="home__mascotte" aria-hidden="true">📖⏱️</div>
-    <h1 class="home__titolo">Leggo a Tempo</h1>
-    <p class="home__sottotitolo">Scegli un gioco e allenati a leggere!</p>
+    <header class="home__testata">
+      <button id="home-utente" type="button" class="home-widget home-utente" title="Tocca per cambiare avatar" aria-label="Il tuo avatar: tocca per cambiarlo">
+        <img id="home-avatar" class="home-utente__avatar" alt="" width="68" height="68" draggable="false" />
+        <span class="home-utente__testi">
+          <span id="home-nome" class="home-utente__nome"></span>
+          <span class="home-utente__aiuto">tocca per cambiare</span>
+        </span>
+      </button>
+
+      <div class="home__centro">
+        <div class="home__mascotte" aria-hidden="true">📖⏱️</div>
+        <h1 class="home__titolo">Leggo a Tempo</h1>
+        <p class="home__sottotitolo">Scegli un gioco e allenati a leggere!</p>
+      </div>
+
+      <div class="home-widget home-stelle" title="Stelline guadagnate in tutti i giochi" role="status" aria-label="Stelline totali">
+        <img class="home-stelle__img" src="img/stella.svg" alt="" width="60" height="60" draggable="false" />
+        <span id="home-stelle-totali" class="home-stelle__numero">0</span>
+      </div>
+    </header>
 
     <div id="lista-giochi" class="giochi-lista"></div>
   </section>
@@ -250,41 +267,37 @@
     </div>
   </section>
 
-  <!-- SCHERMATA RISULTATI -->
-  <section id="schermo-risultati" class="screen">
-    <div class="risultati">
-      <h2 class="risultati__titolo">Tempo finale</h2>
-      <div id="risultati-tempo" class="risultati__tempo">0.0s</div>
-      <p id="risultati-messaggio" class="risultati__messaggio"></p>
-
-      <div class="salva-record">
-        <label class="salva-record__label" for="nome-input">Chi ha giocato?</label>
-        <input id="nome-input" class="salva-record__input" type="text" placeholder="Scrivi il tuo nome" maxlength="30" />
-        <div id="nome-chips" class="chips"></div>
-        <div class="salva-record__azioni">
-          <button id="btn-salva-record" class="btn-primario">💾 Salva record</button>
-          <button id="btn-non-salvare" class="btn-secondario">🚫 Non salvare</button>
-        </div>
-        <p id="salva-conferma" class="salva-conferma"></p>
-      </div>
-
-      <div class="risultati__azioni">
-        <button id="btn-riprova" class="btn-secondario">🔁 Ricomincia</button>
-        <button id="btn-nuove-parole" class="btn-secondario">🎲 Nuova sfida</button>
-        <button id="btn-risultati-esci" class="btn-secondario">🏠 Torna alla home</button>
-      </div>
-    </div>
-  </section>
-
 </main>
+
+<!-- FINE PARTITA: finestra sopra il gioco (tempo + stelline + 3 scelte) -->
+<div id="modale-fine" class="modale" hidden role="dialog" aria-modal="true" aria-labelledby="modale-titolo">
+  <div class="modale__scheda">
+    <h2 id="modale-titolo" class="modale__titolo"></h2>
+    <p id="modale-gioco" class="modale__gioco"></p>
+    <div id="modale-tempo" class="modale__tempo">0.0s</div>
+    <div id="modale-stelle" class="modale__stelle" role="img"></div>
+    <p id="modale-messaggio" class="modale__messaggio"></p>
+    <p id="modale-legenda" class="modale__legenda"></p>
+    <div class="modale__azioni">
+      <button id="modale-ripeti" type="button" class="btn-secondario">🔁 Ripeti la sfida</button>
+      <button id="modale-nuova" type="button" class="btn-primario">🎲 Nuova sfida</button>
+      <button id="modale-esci" type="button" class="btn-secondario">🏠 Esci</button>
+    </div>
+  </div>
+</div>
+<canvas id="coriandoli" class="coriandoli" hidden aria-hidden="true"></canvas>
+
 
 <script src="js/games/bisillabe-piane-semplici.js"></script>
 <script src="js/games/trisillabe-piane.js"></script>
 <script src="js/games/frasi.js"></script>
 <script src="js/games/parola-a-fette.js"></script>
 <script src="js/games/lettere-speculari.js"></script>
+<script src="js/vendor/avataaars.bundle.js"></script>
+<script src="js/giocatore.js"></script>
 <script src="js/games.js"></script>
 <script src="js/ascolto.js"></script>
+<script src="js/fine-partita.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

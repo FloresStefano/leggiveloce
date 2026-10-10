@@ -3,9 +3,6 @@
 
   const PAROLE_PER_PARTITA_LETTURA = 10;
   const PAROLE_PER_PARTITA_ABBINAMENTO = 8;
-  const STORAGE_RECORDS = "leggoATempo:records:v2";
-  const STORAGE_NOMI = "leggoATempo:nomi";
-  const MAX_NOMI_RICORDATI = 12;
   const STORAGE_FRASI_RECENTI = "leggoATempo:frasiRecenti";
   // Una frase gia' giocata non puo' riuscire prima che siano passate almeno
   // 20 giocate diverse (la memoria resta anche se si chiude/riapre l'app).
@@ -39,7 +36,6 @@
     fette: $("#schermo-fette"),
     lettere: $("#schermo-lettere"),
     riporto: $("#schermo-riporto"),
-    risultati: $("#schermo-risultati"),
   };
 
   const el = {
@@ -110,17 +106,11 @@
     riportoBtnNuovaSfida: $("#riporto-btn-nuova-sfida"),
     riportoBtnControlla: $("#riporto-btn-controlla"),
     riportoBtnEsci: $("#riporto-btn-esci"),
-    // risultati
-    risultatiTempo: $("#risultati-tempo"),
-    risultatiMessaggio: $("#risultati-messaggio"),
-    nomeInput: $("#nome-input"),
-    nomeChips: $("#nome-chips"),
-    btnSalva: $("#btn-salva-record"),
-    btnNonSalvare: $("#btn-non-salvare"),
-    salvaConferma: $("#salva-conferma"),
-    btnRiprova: $("#btn-riprova"),
-    btnNuoveParole: $("#btn-nuove-parole"),
-    btnRisultatiEsci: $("#btn-risultati-esci"),
+    // home: giocatore e stelline
+    homeUtente: $("#home-utente"),
+    homeAvatar: $("#home-avatar"),
+    homeNome: $("#home-nome"),
+    homeStelleTotali: $("#home-stelle-totali"),
   };
 
   /** Stato della partita in corso (gioco 1 o gioco 2) */
@@ -147,70 +137,6 @@
     return div.innerHTML;
   }
 
-  // ---------- Salvataggio record (localStorage) ----------
-
-  function leggiRecords() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_RECORDS)) || {};
-    } catch (e) {
-      return {};
-    }
-  }
-
-  function salvaRecords(records) {
-    try {
-      localStorage.setItem(STORAGE_RECORDS, JSON.stringify(records));
-    } catch (e) {
-      /* storage non disponibile: si continua senza salvare */
-    }
-  }
-
-  function leggiNomiRicordati() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_NOMI)) || [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function ricordaNome(nome) {
-    let nomi = leggiNomiRicordati().filter(
-      (n) => n.toLowerCase() !== nome.toLowerCase()
-    );
-    nomi.unshift(nome);
-    nomi = nomi.slice(0, MAX_NOMI_RICORDATI);
-    try {
-      localStorage.setItem(STORAGE_NOMI, JSON.stringify(nomi));
-    } catch (e) {
-      /* ignora */
-    }
-    return nomi;
-  }
-
-  // Salva il tempo solo se e' un nuovo record per quel bambino in quel gioco.
-  function salvaRecordSeMigliore(gameId, nome, tempoMs) {
-    const records = leggiRecords();
-    if (!records[gameId]) records[gameId] = {};
-    const chiave = nome.toLowerCase();
-    const esistente = records[gameId][chiave];
-
-    if (!esistente || tempoMs < esistente.tempoMs) {
-      records[gameId][chiave] = {
-        nome,
-        tempoMs,
-        data: new Date().toISOString(),
-      };
-      salvaRecords(records);
-      return { nuovoRecord: true, precedente: esistente ? esistente.tempoMs : null };
-    }
-    return { nuovoRecord: false, precedente: esistente.tempoMs };
-  }
-
-  function classificaGioco(gameId) {
-    const records = leggiRecords()[gameId] || {};
-    return Object.values(records).sort((a, b) => a.tempoMs - b.tempoMs);
-  }
-
   // ---------- Formattazione tempo ----------
 
   function formattaTempo(ms) {
@@ -226,14 +152,21 @@
   // ---------- Home ----------
 
   function renderHome() {
+    renderGiocatore();
     el.listaGiochi.innerHTML = "";
     GAMES.forEach((gioco) => {
       const card = document.createElement("div");
       card.className = "gioco-card" + (gioco.attivo ? "" : " gioco-card--disabilitato");
       card.style.setProperty("--gioco-colore", gioco.colore);
 
-      const classifica = gioco.attivo ? classificaGioco(gioco.id) : [];
-      const classificaHtml = gioco.attivo ? renderClassificaHtml(classifica) : "";
+      // Stelline accumulate in questo gioco (immagine + numero a fianco).
+      const stelleHtml = gioco.attivo
+        ? `<span class="gioco-card__stelle" title="Stelline guadagnate in questo gioco" aria-label="${window.Giocatore.stelleGioco(
+            gioco.id
+          )} stelline in questo gioco"><img src="img/stella.svg" alt="" width="30" height="30" draggable="false" /><span class="gioco-card__stelle-numero">${window.Giocatore.stelleGioco(
+            gioco.id
+          )}</span></span>`
+        : "";
 
       card.innerHTML = `
         <button class="gioco-card__avvia" ${gioco.attivo ? "" : "disabled"}>
@@ -241,7 +174,7 @@
           <span class="gioco-card__titolo">${gioco.titolo}</span>
           <span class="gioco-card__desc">${gioco.descrizione}</span>
         </button>
-        ${classificaHtml}
+        ${stelleHtml}
       `;
 
       if (gioco.attivo) {
@@ -254,23 +187,21 @@
     });
   }
 
-  function renderClassificaHtml(classifica) {
-    if (!classifica.length) {
-      return `<p class="classifica-vuota">Nessun record ancora: sii il primo a giocare!</p>`;
-    }
-    const medaglie = ["🥇", "🥈", "🥉"];
-    const righe = classifica
-      .slice(0, 8)
-      .map((r, i) => {
-        const medaglia = medaglie[i] || `${i + 1}.`;
-        return `<li><span class="classifica-pos">${medaglia}</span><span class="classifica-nome">${escapeHtml(
-          r.nome
-        )}</span><span class="classifica-tempo">${formattaTempo(
-          r.tempoMs
-        )}</span></li>`;
-      })
-      .join("");
-    return `<ol class="classifica">${righe}</ol>`;
+  // Giocatore della sessione (avatar + soprannome) e contatore globale.
+  function renderGiocatore() {
+    const G = window.Giocatore;
+    el.homeAvatar.src = G.avatarSrc();
+    el.homeNome.textContent = G.nome();
+    el.homeUtente.setAttribute("aria-label", `${G.nome()}: tocca per cambiare avatar`);
+    el.homeStelleTotali.textContent = G.stelleTotali();
+  }
+
+  function rigeneraAvatar() {
+    window.Giocatore.rigeneraAvatar();
+    renderGiocatore();
+    el.homeAvatar.classList.remove("home-utente__avatar--nuovo");
+    void el.homeAvatar.offsetWidth;
+    el.homeAvatar.classList.add("home-utente__avatar--nuovo");
   }
 
   function avviaGiocoDaHome(gameId) {
@@ -434,7 +365,7 @@
     if (window.Ascolto) window.Ascolto.chiudi();
     impostaBottoniLettura(false); // niente Pausa/Ricomincia nel breve intervallo
     setTimeout(() => {
-      if (stato === partita && schermi.gioco.classList.contains("attivo")) mostraRisultati();
+      if (stato === partita && schermi.gioco.classList.contains("attivo")) mostraModaleFine();
     }, 700);
   }
 
@@ -519,7 +450,7 @@
     if (!stato || stato.tipo !== "lettura") return;
     if (stato.inCorso) pausaCronometro();
     if (window.Ascolto) window.Ascolto.chiudi();
-    mostraRisultati();
+    mostraModaleFine();
   }
 
   // ---------- GIOCO 2: Combina bisillabe ----------
@@ -621,7 +552,7 @@
 
       if (stato.coppieTrovate >= stato.coppie.length) {
         pausaCronometro();
-        mostraRisultati();
+        mostraModaleFineTra(500);
       }
     } else {
       stato.bloccato = true;
@@ -840,7 +771,7 @@
       if (stato.trovate >= PAROLE_PER_PARTITA_FETTE) {
         pausaCronometro();
         if (window.Ascolto) window.Ascolto.chiudi();
-        mostraRisultati();
+        mostraModaleFineTra(500);
       }
     } else {
       elemento.classList.add("errore");
@@ -1040,7 +971,7 @@
       if (stato.trovate >= PAROLE_PER_LETTERA) {
         pausaCronometro();
         if (window.Ascolto) window.Ascolto.chiudi();
-        mostraRisultati();
+        mostraModaleFineTra(500);
       }
     } else {
       elemento.classList.add("errore");
@@ -1272,8 +1203,7 @@
       });
     }
 
-    el.riportoBtnControlla.textContent =
-      s.fase === "finito" ? "💾 Salva il tempo" : "✅ CONTROLLA";
+    el.riportoBtnControlla.textContent = "✅ CONTROLLA";
   }
 
   // Dopo ogni spostamento/taglio: se la scatola ha esattamente 10 quadretti
@@ -1333,10 +1263,7 @@
 
   function controllaRiporto() {
     if (!stato || stato.tipo !== "riporto") return;
-    if (stato.fase === "finito") {
-      mostraRisultati();
-      return;
-    }
+    if (stato.fase === "finito") return; // il modale e' gia' in arrivo (vedi rispondiRiporto)
     const nScatola = sommaQuadretti(stato.zone.scatola);
     const nFuori = sommaQuadretti(stato.zone.fuori);
     if (stato.fase === "risposte") {
@@ -1360,6 +1287,11 @@
       stato.fase = "finito";
       stato.selezionato = null;
       stato.messaggio = "";
+      // un istante per vedere il "Bravo!" e il risultato, poi si apre il modale
+      const partita = stato;
+      setTimeout(() => {
+        if (stato === partita && partita.fase === "finito") mostraModaleFine();
+      }, 1100);
     } else {
       if (!stato.sbagliate.includes(n)) stato.sbagliate.push(n);
       stato.messaggio = "No, riprova! Conta 10 nella scatola più il riporto.";
@@ -1492,73 +1424,42 @@
     clearInterval(timerIntervalId);
     annullaDragRiporto();
     if (window.Ascolto) window.Ascolto.chiudi();
+    if (window.FinePartita) window.FinePartita.chiudi();
     stato = null;
     renderHome();
     mostraSchermo("home");
   }
 
-  // ---------- Risultati / salvataggio (condivisi) ----------
+  // ---------- Fine partita: modale con tempo e stelline (condiviso) ----------
 
-  function mostraRisultati() {
-    const tempoFinale = tempoTrascorsoMs();
-    el.risultatiTempo.textContent = formattaTempo(tempoFinale);
-    el.risultatiMessaggio.textContent = "";
-    el.salvaConferma.textContent = "";
-
-    const nomi = leggiNomiRicordati();
-    el.nomeInput.value = nomi[0] || "";
-    renderNomeChips(nomi);
-
-    mostraSchermo("risultati");
+  // Apre la finestra di fine partita sopra il gioco appena finito, assegna le
+  // stelline (una sola volta per partita) e offre solo 3 scelte.
+  // Come mostraModaleFine, ma dopo un attimo (si vede l'ultima risposta giusta
+  // diventare verde). Se nel frattempo si preme Ricomincia/Esci, non si apre.
+  function mostraModaleFineTra(ms) {
+    const partita = stato;
+    setTimeout(() => {
+      if (stato === partita && !partita.inCorso && partita.accumulatoMs > 0) mostraModaleFine();
+    }, ms);
   }
 
-  function renderNomeChips(nomi) {
-    el.nomeChips.innerHTML = "";
-    nomi.forEach((nome) => {
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "chip-nome";
-      chip.textContent = nome;
-      chip.addEventListener("click", () => {
-        el.nomeInput.value = nome;
-      });
-      el.nomeChips.appendChild(chip);
+  function mostraModaleFine() {
+    if (!stato || !window.FinePartita || window.FinePartita.aperta()) return;
+    const gioco = GAMES.find((g) => g.id === stato.gameId);
+    const soglie = (gioco && gioco.soglieStelle) || window.Giocatore.SOGLIE_STELLE_SECONDI;
+    const tempoFinale = tempoTrascorsoMs();
+    const stelle = window.Giocatore.stelleDaTempo(tempoFinale, soglie);
+    window.Giocatore.aggiungiStelle(stato.gameId, stelle);
+
+    window.FinePartita.mostra({
+      gioco: gioco ? `${gioco.emoji} ${gioco.titolo}` : "",
+      tempo: tempoFinale,
+      stelle,
+      soglie,
+      ripeti: ricominciaDaRisultati,
+      nuova: nuovaSfidaDaRisultati,
+      esci: esciDalGioco,
     });
-  }
-
-  function salvaRecordCorrente() {
-    if (!stato) return;
-    const nome = el.nomeInput.value.trim();
-    if (!nome) {
-      el.salvaConferma.textContent = "Scrivi il tuo nome prima di salvare 🙂";
-      el.salvaConferma.style.color = "var(--error)";
-      return;
-    }
-
-    const tempoFinale = tempoTrascorsoMs();
-    const esito = salvaRecordSeMigliore(stato.gameId, nome, tempoFinale);
-    ricordaNome(nome);
-    renderNomeChips(leggiNomiRicordati());
-
-    if (esito.nuovoRecord && esito.precedente === null) {
-      el.salvaConferma.textContent = `🎉 Primo record salvato per ${nome}!`;
-      el.salvaConferma.style.color = "var(--success)";
-    } else if (esito.nuovoRecord) {
-      el.salvaConferma.textContent = `🏆 Nuovo record per ${nome}! Prima: ${formattaTempo(
-        esito.precedente
-      )}`;
-      el.salvaConferma.style.color = "var(--success)";
-    } else {
-      el.salvaConferma.textContent = `Il record di ${nome} resta ${formattaTempo(
-        esito.precedente
-      )} (questo tentativo: ${formattaTempo(tempoFinale)})`;
-      el.salvaConferma.style.color = "var(--ink)";
-    }
-  }
-
-  function nonSalvareRecord() {
-    el.salvaConferma.textContent = "Ok, tempo non salvato.";
-    el.salvaConferma.style.color = "var(--ink)";
   }
 
   function ricominciaDaRisultati() {
@@ -1620,12 +1521,8 @@
       if (stato && stato.tipo === "riporto") renderRiporto();
     });
 
-    // risultati (condivisi)
-    el.btnSalva.addEventListener("click", salvaRecordCorrente);
-    el.btnNonSalvare.addEventListener("click", nonSalvareRecord);
-    el.btnRiprova.addEventListener("click", ricominciaDaRisultati);
-    el.btnNuoveParole.addEventListener("click", nuovaSfidaDaRisultati);
-    el.btnRisultatiEsci.addEventListener("click", esciDalGioco);
+    // giocatore: toccando l'avatar se ne genera uno nuovo (stesso id di sessione)
+    el.homeUtente.addEventListener("click", rigeneraAvatar);
   }
 
   document.addEventListener("DOMContentLoaded", init);

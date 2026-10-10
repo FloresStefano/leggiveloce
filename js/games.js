@@ -24,6 +24,10 @@
  * voce si evidenziano (tocco = sente la parola, doppio tocco = segnata come
  * letta); in "fette" e "lettere" la voce seleziona le parole come se fossero toccate.
  *
+ * "soglieStelle: [a, b, c]" (facoltativo) cambia per quel gioco i secondi
+ * delle stelline: 3 stelline sotto a, 2 sotto b, 1 sotto c, 0 oltre
+ * (di default [10, 20, 30], vedi js/giocatore.js).
+ *
  * Per aggiungere un nuovo gioco in futuro con una meccanica NUOVA, serve
  * anche scrivere la logica corrispondente in js/app.js: "tipo" qui deve
  * combaciare con quello che app.js sa gestire.
