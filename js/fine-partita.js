@@ -116,15 +116,16 @@
     return min + ":" + (s % 60).toFixed(1).padStart(4, "0");
   }
 
+  // Si vedono solo le stelline guadagnate (2 -> 2 stelline, 0 -> nessuna):
+  // mai stelline vuote o tristi.
   function disegnaStelle(n) {
     const box = $("modale-stelle");
     box.innerHTML = "";
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < n; i++) {
       const img = document.createElement("img");
-      const presa = i < n;
-      img.src = presa ? "img/stella.svg" : "img/stella-vuota.svg";
-      img.alt = presa ? "stellina" : "stellina vuota";
-      img.className = "modale__stella" + (presa ? " modale__stella--presa" : "");
+      img.src = "img/stella.svg";
+      img.alt = "stellina";
+      img.className = "modale__stella modale__stella--presa";
       img.style.setProperty("--ritardo", 0.35 + i * 0.3 + "s");
       img.draggable = false;
       box.appendChild(img);
