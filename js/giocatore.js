@@ -145,6 +145,12 @@
       return Object.keys(s).reduce((somma, k) => somma + (s[k] || 0), 0);
     },
 
+    /** Azzera tutti i contatori di stelline (non cambia id, nome e avatar). */
+    azzeraStelle() {
+      assicura().stelle = {};
+      salva();
+    },
+
     aggiungiStelle(gameId, n) {
       if (!(n > 0)) return;
       const d = assicura();

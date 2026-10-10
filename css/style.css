@@ -159,6 +159,8 @@ button {
 }
 
 .home-stelle {
+  user-select: none;
+  -webkit-user-select: none;
   grid-column: 3;
   grid-row: 1;
   justify-self: end;
@@ -1243,4 +1245,15 @@ button:disabled {
 
 .btn-secondario:active {
   transform: scale(0.97);
+}
+
+/* Feedback quando i contatori vengono azzerati (doppio tocco sul totale). */
+.home-stelle--azzerato { animation: stelle-azzerate 0.5s ease; }
+@keyframes stelle-azzerate {
+  0% { transform: scale(1); }
+  35% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-stelle--azzerato { animation: none; }
 }

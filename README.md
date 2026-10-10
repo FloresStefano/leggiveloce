@@ -42,6 +42,12 @@ dell'utente in alto a sinistra (ai lati opposti). Le stelline durano finché
 resta il salvataggio del browser (`localStorage`, chiave
 `leggoATempo:giocatore:v1`); non c'è nessun database.
 
+**Azzerare le stelline.** Un **doppio click/tocco sul totale** delle stelline
+(in alto a destra) azzera tutti i contatori, quello totale e quelli dei singoli
+giochi. Non c'è nessuna conferma. L'avatar e il giocatore restano gli stessi.
+I due tocchi devono essere ravvicinati (entro mezzo secondo): un tocco singolo
+non fa nulla.
+
 Le soglie sono comuni a tutti i giochi (`SOGLIE_STELLE_SECONDI` in
 `js/giocatore.js`); un gioco può averne di sue con `soglieStelle: [a, b, c]`
 in `js/games.js`.
@@ -53,6 +59,7 @@ in `js/games.js`.
   stesso gioco), non si tiene il migliore.
 - l'avatar usa solo i colori/espressioni "da bambini" e non copia l'esempio
   del link (cappello, baffi, teschio), che sarebbe un caso a sé.
+- il doppio click sul totale azzera subito, **senza chiedere conferma**, come richiesto.
 - le vecchie classifiche e i record per nome sono stati rimossi, insieme alla
   pagina dei risultati.
 

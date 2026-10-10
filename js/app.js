@@ -109,6 +109,7 @@
     // home: giocatore e stelline
     homeUtente: $("#home-utente"),
     homeAvatar: $("#home-avatar"),
+    homeStelle: $("#home-stelle"),
     homeStelleTotali: $("#home-stelle-totali"),
   };
 
@@ -191,6 +192,24 @@
     const G = window.Giocatore;
     el.homeAvatar.src = G.avatarSrc();
     el.homeStelleTotali.textContent = G.stelleTotali();
+  }
+
+  // Doppio click/tocco sul totale delle stelline: azzera tutti i contatori
+  // (totale e quelli dei singoli giochi). Si riconosce a mano (due tocchi entro
+  // 450 ms) cosi' funziona uguale con mouse e dito.
+  let ultimoTocco = 0;
+  function toccoTotaleStelle() {
+    const ora = performance.now();
+    if (ora - ultimoTocco > 450) {
+      ultimoTocco = ora;
+      return;
+    }
+    ultimoTocco = 0;
+    window.Giocatore.azzeraStelle();
+    renderHome();
+    el.homeStelle.classList.remove("home-stelle--azzerato");
+    void el.homeStelle.offsetWidth;
+    el.homeStelle.classList.add("home-stelle--azzerato");
   }
 
   function rigeneraAvatar() {
@@ -1534,6 +1553,7 @@
 
     // giocatore: toccando l'avatar se ne genera uno nuovo (stesso id di sessione)
     el.homeUtente.addEventListener("click", rigeneraAvatar);
+    el.homeStelle.addEventListener("click", toccoTotaleStelle);
   }
 
   document.addEventListener("DOMContentLoaded", init);
