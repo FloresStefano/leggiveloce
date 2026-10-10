@@ -19,10 +19,10 @@
  *   risultato fra 6 risposte; non usa nessun file di parole (Gioco 7)
  *
  * "ascolto: true" attiva l'ascolto a voce opzionale di js/ascolto.js (giochi
- * di tipo "lettura", "frase" e "fette"): interruttore "🎤 Ascolto" nella
+ * di tipo "lettura", "frase", "fette" e "lettere"): interruttore "🎤 Ascolto" nella
  * schermata di gioco. Nei giochi "lettura"/"frase" le parole lette ad alta
  * voce si evidenziano (tocco = sente la parola, doppio tocco = segnata come
- * letta); in "fette" la voce seleziona le parole come se fossero toccate.
+ * letta); in "fette" e "lettere" la voce seleziona le parole come se fossero toccate.
  *
  * Per aggiungere un nuovo gioco in futuro con una meccanica NUOVA, serve
  * anche scrivere la logica corrispondente in js/app.js: "tipo" qui deve
@@ -86,6 +86,7 @@ const GAMES = [
     colore: "#d1495b",
     descrizione: "Scegli una lettera (b/d/p/q) e trova le 5 parole che la contengono, più veloce che puoi.",
     tipo: "lettere",
+    ascolto: true,
     attivo: true,
   },
   {

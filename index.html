@@ -137,16 +137,24 @@
   <section id="schermo-lettere" class="screen">
     <div class="gioco">
       <div class="gioco__header">
-        <div class="gioco__titolo">🔁 Lettere speculari</div>
+        <div class="titolo-gruppo">
+          <div class="gioco__titolo">🔁 Lettere speculari</div>
+          <label id="lettere-ascolto-interruttore" class="interruttore" hidden title="Ascolto: dì le parole ad alta voce per sceglierle, oppure toccale.">
+            <input id="lettere-ascolto-opt" type="checkbox" role="switch" checked />
+            <span class="interruttore__traccia" aria-hidden="true"></span>
+            <span class="interruttore__testo">🎤 Ascolto</span>
+          </label>
+          <span id="lettere-ascolto-stato" class="ascolto-stato" aria-live="polite" hidden></span>
+        </div>
         <div id="lettere-cronometro" class="cronometro">0.0s</div>
       </div>
 
       <div class="lettere-area">
         <div id="lettere-contenuto" class="lettere-contenuto">
-          <p class="abbina-istruzioni">Scegli quale lettera vuoi usare per giocare:</p>
+          <p class="abbina-istruzioni">Ho scelto una lettera per te! Se vuoi, toccane un'altra prima di cominciare:</p>
           <div id="lettere-scelta" class="lettere-scelta"></div>
 
-          <p class="abbina-istruzioni">Trova le 5 parole con quella lettera, più veloce che puoi:</p>
+          <p class="abbina-istruzioni">Trova le 5 parole con quella lettera, dicendole ad alta voce o toccandole, più veloce che puoi:</p>
           <div id="lettere-griglia" class="lettere-griglia"></div>
         </div>
 

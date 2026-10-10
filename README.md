@@ -28,10 +28,10 @@ dispositivo (`localStorage`).
    su quel gioco: viene aggiornato solo se il nuovo tentativo è più
    veloce.
 
-### 🎤 Ascolto a voce (opzionale: Giochi 1, 3, 4 e 5)
+### 🎤 Ascolto a voce (opzionale: Giochi 1, 3, 4, 5 e 6)
 
-Nei Giochi 1 (Bisillabe), 3 (Trisillabe), 4 (Leggi una frase) e 5 (Parola
-a fette) c'è un interruttore **🎤 Ascolto** accanto al titolo (non c'è
+Nei Giochi 1 (Bisillabe), 3 (Trisillabe), 4 (Leggi una frase), 5 (Parola
+a fette) e 6 (Lettere speculari) c'è un interruttore **🎤 Ascolto** accanto al titolo (non c'è
 nella home). Parte **acceso a ogni avvio del gioco dalla home** e si
 spegne da solo quando la partita finisce. È un di più: il gioco funziona
 come sempre anche con l'interruttore spento, con il browser che non
@@ -52,14 +52,18 @@ supporta il riconoscimento vocale o con il microfono negato.
   spento disattiva tutto (voce, tocco e doppio tocco).
 - **Leggi una frase**: se una parola compare più volte nella frase (es.
   "il", "la") va detta altrettante volte per evidenziarle tutte.
-- **Parola a fette** (Gioco 5): niente tocchi speciali, perché toccare una
+- **Parola a fette** (Gioco 5) e **Lettere speculari** (Gioco 6): niente
+  tocchi speciali, perché toccare una
   parola serve già a sceglierla. Ogni parola detta ad alta voce tra quelle
   della griglia vale come toccarla: se ha la sillaba giusta diventa verde,
   altrimenti rossa, con le stesse regole di sempre. La voce non "declicca"
   mai una parola rossa (si fa solo toccandola) e non tocca quelle già
-  decise. Trovate le 5 giuste, il gioco finisce come prima.
+  decise. Trovate le 5 giuste, il gioco finisce come prima. In questi due
+  giochi le parole proposte sono **sempre tutte diverse** (nessuna
+  identica a un'altra, nemmeno con maiuscole/accenti diversi): se una
+  parola comparisse due volte nei file dati, ne viene tenuta una sola.
 - Il codice è in `js/ascolto.js`; si abilita per un gioco con
-  `ascolto: true` in `js/games.js` (tipo "lettura", "frase" o "fette").
+  `ascolto: true` in `js/games.js` (tipo "lettura", "frase", "fette" o "lettere").
 
 **Privacy e limiti**: usa la Web Speech API del browser. Nella modalità
 predefinita l'audio è elaborato da un servizio esterno (Google su Chrome,
@@ -187,15 +191,19 @@ volta fatta, resta fissa per tutta la partita.
    VIA!" con tutto sfocato. Alla fine compaiono in alto 4 blocchetti
    piccoli e compatti, uno per ciascuna lettera speculare: **b**, **d**,
    **p**, **q**.
-2. Il bambino ne sceglie una: quella è la lettera su cui giocherà per
-   tutta la partita (non si può più cambiare, come la sillaba in "Parola a
-   fette").
+2. **Una delle 4 è già scelta a caso** (evidenziata): è la lettera su cui
+   si gioca. Il bambino può toccarne un'altra, ma solo finché non sceglie
+   la prima parola; da quel momento la lettera resta fissa per tutta la
+   partita (come la sillaba in "Parola a fette"). A ogni Ricomincia/Nuova
+   sfida se ne sceglie una nuova a caso.
 3. Più sotto ci sono 20 parole (bisillabe o trisillabe), anche loro
    piccole e compatte e senza suggerimento sillabico: 5 parole per ognuna
    delle 4 lettere. Ogni parola contiene *una sola* delle 4 lettere
    speculari (mai due insieme, per non creare ambiguità), come iniziale o
    all'interno della parola. Il bambino deve leggere e trovare le 5 parole
-   che contengono proprio la lettera scelta, nel minor tempo possibile.
+   che contengono proprio la lettera scelta, nel minor tempo possibile, **a
+   mano o con la voce** (vedi "Ascolto a voce": una parola detta ad alta
+   voce vale come toccarla).
 4. Se sbaglia, il blocchetto diventa rosso; ci si clicca sopra di nuovo
    per "correggersi" e farlo tornare normale, e si può riprovare. Se la
    scelta è giusta il blocchetto diventa verde e resta bloccato. Trovate

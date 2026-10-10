@@ -292,6 +292,17 @@
     return stato.accumulatoMs + inCorsoMs;
   }
 
+  // Tipi di partita che possono avere l'ascolto a voce (js/ascolto.js).
+  function usaAscolto(tipo) {
+    return tipo === "lettura" || tipo === "fette" || tipo === "lettere";
+  }
+
+  // Chiave per confrontare le parole: niente maiuscole ne' accenti, cosi' due
+  // parole "uguali" non finiscono mai insieme tra quelle da scegliere.
+  function chiaveParola(testo) {
+    return String(testo).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  }
+
   function aggiornaDisplayCronometro() {
     if (!stato || !stato.cronometroEl) return;
     stato.cronometroEl.textContent = formattaTempo(tempoTrascorsoMs());
@@ -304,7 +315,7 @@
     aggiornaDisplayCronometro();
     timerIntervalId = setInterval(aggiornaDisplayCronometro, 100);
     if (stato.tipo === "lettura") el.btnPausa.textContent = "⏸️ Pausa";
-    if ((stato.tipo === "lettura" || stato.tipo === "fette") && window.Ascolto) window.Ascolto.riprendi();
+    if (usaAscolto(stato.tipo) && window.Ascolto) window.Ascolto.riprendi();
   }
 
   function pausaCronometro() {
@@ -315,7 +326,7 @@
     clearInterval(timerIntervalId);
     aggiornaDisplayCronometro();
     if (stato.tipo === "lettura") el.btnPausa.textContent = "▶️ Riprendi";
-    if ((stato.tipo === "lettura" || stato.tipo === "fette") && window.Ascolto) window.Ascolto.pausa();
+    if (usaAscolto(stato.tipo) && window.Ascolto) window.Ascolto.pausa();
   }
 
   function togglePausa() {
@@ -669,11 +680,21 @@
   // pool della parola target (che ne ha 7 per posizione): 15 parole in
   // tutto, cosi' anche le due posizioni non scelte restano equilibrate a
   // 5 come quella scelta.
+  // Le 15 parole sono sempre tutte diverse tra loro (e diverse dalla parola
+  // target): se nel file dati ce ne fosse una ripetuta, viene scartata.
   function selezionaParoleFette(fetta) {
     const risultato = [];
+    const viste = new Set([chiaveParola(fetta.parola)]);
     [1, 2, 3].forEach((posizione) => {
       const diQuestaPosizione = fetta.parole.filter((p) => p.posizione === posizione);
-      risultato.push(...mescola(diQuestaPosizione).slice(0, PAROLE_PER_PARTITA_FETTE));
+      let prese = 0;
+      mescola(diQuestaPosizione).forEach((p) => {
+        const k = chiaveParola(p.parola);
+        if (prese >= PAROLE_PER_PARTITA_FETTE || viste.has(k)) return;
+        viste.add(k);
+        risultato.push(p);
+        prese++;
+      });
     });
     return risultato;
   }
@@ -870,11 +891,20 @@
   // Pesca 6 parole a caso per ciascuna delle 4 lettere (b/d/p/q) dal pool
   // del gioco: 24 parole in tutto, ciascuna con la sua lettera di
   // appartenenza.
+  // Le 20 parole sono sempre tutte diverse tra loro: se nel file dati una
+  // parola comparisse due volte (anche sotto lettere diverse), viene scartata.
   function pescaParoleLettere(pool) {
     const parole = [];
+    const viste = new Set();
     LETTERE_SPECULARI.forEach((lettera) => {
-      const scelte = mescola(pool[lettera]).slice(0, PAROLE_PER_LETTERA);
-      scelte.forEach((p) => parole.push({ parola: p.parola, lettera }));
+      let prese = 0;
+      mescola(pool[lettera]).forEach((p) => {
+        const k = chiaveParola(p.parola);
+        if (prese >= PAROLE_PER_LETTERA || viste.has(k)) return;
+        viste.add(k);
+        parole.push({ parola: p.parola, lettera });
+        prese++;
+      });
     });
     return parole;
   }
@@ -891,6 +921,8 @@
       tipo: "lettere",
       parole,
       letteraScelta: null,
+      letteraBloccata: false,
+      ordineGriglia: [],
       trovate: 0,
       accumulatoMs: 0,
       inCorso: false,
@@ -901,6 +933,7 @@
     el.lettereCronometro.textContent = formattaTempo(0);
     el.lettereMessaggio.textContent = "";
     renderLettereSpeculari(parole);
+    apriAscoltoLettere();
     mostraSchermo("lettere");
     avviaCountdownLettere(() => avviaCronometro());
   }
@@ -917,6 +950,7 @@
     });
 
     const paroleMescolate = mescola(parole);
+    stato.ordineGriglia = paroleMescolate; // stesso ordine delle caselle (serve all'ascolto)
     el.lettereGriglia.innerHTML = "";
     paroleMescolate.forEach((p) => {
       const tile = document.createElement("button");
@@ -926,19 +960,58 @@
       tile.addEventListener("click", () => gestisciClickParolaLettere(p.lettera, tile));
       el.lettereGriglia.appendChild(tile);
     });
+
+    preselezionaLetteraSpeculare();
   }
 
-  // Sceglie quale lettera (b/d/p/q) usare per questa partita: una volta
-  // scelta resta fissa per tutta la partita (non si puo' cambiare idea),
-  // come la scelta della sillaba in "Parola a fette".
+  // All'inizio una delle 4 lettere (b/d/p/q) e' gia' scelta a caso, come la
+  // sillaba in "Parola a fette": il bambino puo' toccarne un'altra, ma solo
+  // finche' non sceglie la prima parola; poi resta fissa per la partita.
+  function preselezionaLetteraSpeculare() {
+    if (!stato || stato.tipo !== "lettere") return;
+    const bottoni = $$(".abbina-tile", el.lettereScelta);
+    if (!bottoni.length) return;
+    const i = Math.floor(Math.random() * bottoni.length);
+    stato.letteraBloccata = false;
+    scegliLetteraSpeculare(LETTERE_SPECULARI[i], bottoni[i]);
+  }
+
   function scegliLetteraSpeculare(lettera, elemento) {
-    if (!stato || stato.tipo !== "lettere" || stato.letteraScelta) return;
+    if (!stato || stato.tipo !== "lettere" || stato.letteraBloccata) return;
     stato.letteraScelta = lettera;
+    $$(".abbina-tile", el.lettereScelta).forEach((t) => t.classList.remove("selezionata"));
+    elemento.classList.add("selezionata");
+    el.lettereMessaggio.textContent = "";
+  }
+
+  function bloccaLetteraSpeculare() {
+    stato.letteraBloccata = true;
     $$(".abbina-tile", el.lettereScelta).forEach((t) => {
       t.disabled = true;
     });
-    elemento.classList.add("selezionata");
-    el.lettereMessaggio.textContent = "";
+  }
+
+  // Ascolto a voce (js/ascolto.js): ogni parola della griglia detta ad alta
+  // voce vale come toccarla (giusta o sbagliata, stesse regole).
+  function apriAscoltoLettere() {
+    if (!window.Ascolto || !stato) return;
+    const gioco = GAMES.find((g) => g.id === stato.gameId);
+    const partita = stato;
+    window.Ascolto.apri({
+      modo: "selezione",
+      schermo: "lettere",
+      abilitato: !!(gioco && gioco.ascolto),
+      parole: partita.ordineGriglia,
+      inCorso: () => stato === partita && partita.inCorso,
+      inPausa: () => stato === partita && !partita.inCorso && partita.accumulatoMs > 0,
+      alTrovata: (i) => {
+        if (stato !== partita) return;
+        const tile = el.lettereGriglia.children[i];
+        // la voce non "declicca" e non tocca le parole gia' decise
+        if (!tile || tile.classList.contains("corretta") || tile.classList.contains("errore")) return;
+        gestisciClickParolaLettere(partita.ordineGriglia[i].lettera, tile);
+      },
+    });
   }
 
   function gestisciClickParolaLettere(letteraParola, elemento) {
@@ -949,6 +1022,7 @@
       el.lettereMessaggio.textContent = "Scegli prima una lettera qui sopra!";
       return;
     }
+    if (!stato.letteraBloccata) bloccaLetteraSpeculare();
 
     // Un blocchetto gia' segnato come errore si "declicca" tornando neutro,
     // cosi' il bambino puo' correggersi e riprovare.
@@ -965,6 +1039,7 @@
 
       if (stato.trovate >= PAROLE_PER_LETTERA) {
         pausaCronometro();
+        if (window.Ascolto) window.Ascolto.chiudi();
         mostraRisultati();
       }
     } else {
@@ -980,10 +1055,12 @@
     stato.inCorso = false;
     stato.inizioSegmento = null;
     stato.letteraScelta = null;
+    stato.letteraBloccata = false;
     stato.trovate = 0;
     el.lettereCronometro.textContent = formattaTempo(0);
     el.lettereMessaggio.textContent = "";
     renderLettereSpeculari(stato.parole);
+    apriAscoltoLettere();
     mostraSchermo("lettere");
     avviaCountdownLettere(() => avviaCronometro());
   }
