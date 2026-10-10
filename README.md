@@ -28,6 +28,37 @@ dispositivo (`localStorage`).
    su quel gioco: viene aggiornato solo se il nuovo tentativo è più
    veloce.
 
+### 🎤 Ascolto a voce (opzionale, solo Gioco 1)
+
+Nel Gioco 1 c'è un interruttore **🎤 Ascolto** accanto al titolo (non c'è
+nella home). Parte **acceso a ogni avvio del gioco dalla home** e si
+spegne da solo quando la partita finisce. È un di più: il gioco funziona
+come sempre anche con l'interruttore spento, con il browser che non
+supporta il riconoscimento vocale o con il microfono negato.
+
+- **A voce**: quando il cronometro è partito, l'app ascolta (italiano) e
+  **evidenzia in verde** ogni parola che riconosce tra quelle a schermo
+  (maiuscole e accenti non contano; una parola spezzata in sillabe, es.
+  "ca sa", vale come "casa"; è tollerata una lettera di differenza solo
+  per parole di almeno 5 lettere e solo se non c'è ambiguità).
+- **Tocco su una parola**: la pronuncia (sintesi vocale). Mentre parla,
+  il microfono è sospeso, per non "ascoltare" la voce del tablet.
+- **Doppio tocco su una parola**: la evidenzia come se fosse stata letta.
+- **Il gioco si ferma in 3 modi**: tutte le 10 parole evidenziate (a voce
+  o con doppio tocco) → il cronometro si ferma subito e dopo un istante
+  compare la schermata del tempo; oppure **FINE** a mano, come prima.
+- Durante il conto alla rovescia e in pausa la voce è ignorata. L'interruttore
+  spento disattiva tutto (voce, tocco e doppio tocco).
+- Il codice è in `js/ascolto.js`; si abilita per un gioco di tipo
+  "lettura" con `ascolto: true` in `js/games.js`.
+
+**Privacy e limiti**: usa la Web Speech API del browser. Nella modalità
+predefinita l'audio è elaborato da un servizio esterno (Google su Chrome,
+Apple su Safari); l'app non salva né invia nulla altrove. Il browser
+chiede il permesso del microfono. Il riconoscimento può sbagliare con voci
+di bambini e parole isolate, e arriva con circa mezzo secondo di ritardo
+(il tempo finale ne risente leggermente).
+
 ## 🧩 Gioco 2: "Combina bisillabe"
 
 1. Si entra nel gioco: parte subito il cronometro (nessun conto alla
@@ -247,6 +278,7 @@ finché non verranno definiti e attivati.
 index.html                             home, giochi 1-7, risultati
 css/style.css                          stile grafico, responsive, per tablet
 js/games.js                            elenco dei giochi (id, tipo, attivo/non attivo)
+js/ascolto.js                          ascolto a voce opzionale (Gioco 1)
 js/games/bisillabe-piane-semplici.js   le parole usate dai giochi 1 e 2
 js/games/trisillabe-piane.js           le parole usate dal gioco 3
 js/games/frasi.js                      le frasi usate dal gioco 4

@@ -34,7 +34,15 @@
   <section id="schermo-gioco" class="screen">
     <div class="gioco">
       <div class="gioco__header">
-        <div id="gioco-titolo" class="gioco__titolo"></div>
+        <div class="titolo-gruppo">
+          <div id="gioco-titolo" class="gioco__titolo"></div>
+          <label id="ascolto-interruttore" class="interruttore" hidden title="Ascolto: riconosce le parole lette a voce. Tocca una parola per sentirla, tocca due volte per segnarla come letta.">
+            <input id="ascolto-opt" type="checkbox" role="switch" checked />
+            <span class="interruttore__traccia" aria-hidden="true"></span>
+            <span class="interruttore__testo">🎤 Ascolto</span>
+          </label>
+          <span id="ascolto-stato" class="ascolto-stato" aria-live="polite" hidden></span>
+        </div>
         <div id="cronometro" class="cronometro">0.0s</div>
       </div>
 
@@ -153,12 +161,12 @@
   <section id="schermo-riporto" class="screen screen--riporto">
     <div class="gioco gioco--ampio">
       <div class="gioco__header gioco__header--compatto">
-        <div class="riporto-titolo-gruppo">
+        <div class="titolo-gruppo">
           <div class="gioco__titolo">🧮 Somme col riporto</div>
-          <label class="riporto-interruttore" title="Mostra o nascondi i numeri sotto le scatole">
+          <label class="interruttore" title="Mostra o nascondi i numeri sotto le scatole">
             <input id="riporto-opt-numeri" type="checkbox" role="switch" checked />
-            <span class="riporto-interruttore__traccia" aria-hidden="true"></span>
-            <span class="riporto-interruttore__testo">🔢 Numeri</span>
+            <span class="interruttore__traccia" aria-hidden="true"></span>
+            <span class="interruttore__testo">🔢 Numeri</span>
           </label>
         </div>
         <div id="riporto-cronometro" class="cronometro">0.0s</div>
@@ -260,6 +268,7 @@
 <script src="js/games/parola-a-fette.js"></script>
 <script src="js/games/lettere-speculari.js"></script>
 <script src="js/games.js"></script>
+<script src="js/ascolto.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

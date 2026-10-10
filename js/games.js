@@ -18,6 +18,11 @@
  *   trascinano nella scatola da 10 e in quella del riporto) + scelta del
  *   risultato fra 6 risposte; non usa nessun file di parole (Gioco 7)
  *
+ * "ascolto: true" (solo per i giochi di tipo "lettura"/"frase") attiva
+ * l'ascolto a voce opzionale di js/ascolto.js: interruttore "🎤 Ascolto" nella
+ * schermata di gioco, parole evidenziate quando il bambino le legge, tocco =
+ * sente la parola, doppio tocco = segnata come letta.
+ *
  * Per aggiungere un nuovo gioco in futuro con una meccanica NUOVA, serve
  * anche scrivere la logica corrispondente in js/app.js: "tipo" qui deve
  * combaciare con quello che app.js sa gestire.
@@ -31,6 +36,7 @@ const GAMES = [
     colore: "#3fb984",
     descrizione: "10 parole a due sillabe: leggile tutte più veloce che puoi.",
     tipo: "lettura",
+    ascolto: true,
     attivo: true,
   },
   {

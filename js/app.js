@@ -276,6 +276,7 @@
   function avviaGiocoDaHome(gameId) {
     const gioco = GAMES.find((g) => g.id === gameId);
     if (!gioco || !gioco.attivo) return;
+    if (window.Ascolto) window.Ascolto.nuovoAvvio(); // l'ascolto parte acceso a ogni avvio dalla home
     if (gioco.tipo === "abbinamento") avviaAbbinamento(gameId);
     else if (gioco.tipo === "fette") avviaFette(gameId);
     else if (gioco.tipo === "lettere") avviaLettereSpeculari(gameId);
@@ -302,7 +303,10 @@
     stato.inizioSegmento = performance.now();
     aggiornaDisplayCronometro();
     timerIntervalId = setInterval(aggiornaDisplayCronometro, 100);
-    if (stato.tipo === "lettura") el.btnPausa.textContent = "⏸️ Pausa";
+    if (stato.tipo === "lettura") {
+      el.btnPausa.textContent = "⏸️ Pausa";
+      if (window.Ascolto) window.Ascolto.riprendi();
+    }
   }
 
   function pausaCronometro() {
@@ -312,7 +316,10 @@
     stato.inizioSegmento = null;
     clearInterval(timerIntervalId);
     aggiornaDisplayCronometro();
-    if (stato.tipo === "lettura") el.btnPausa.textContent = "▶️ Riprendi";
+    if (stato.tipo === "lettura") {
+      el.btnPausa.textContent = "▶️ Riprendi";
+      if (window.Ascolto) window.Ascolto.pausa();
+    }
   }
 
   function togglePausa() {
@@ -390,8 +397,38 @@
     el.nomeGioco.textContent = `${gioco.emoji} ${gioco.titolo}`;
     el.cronometro.textContent = formattaTempo(0);
     renderParoleGriglia(parole);
+    apriAscolto();
     mostraSchermo("gioco");
     avviaCountdownESfocatura(() => avviaCronometro());
+  }
+
+  // Ascolto a voce opzionale (js/ascolto.js): non cambia le regole del gioco,
+  // evidenzia le parole lette e, a parole finite, equivale a premere FINE.
+  function apriAscolto() {
+    if (!window.Ascolto || !stato) return;
+    const gioco = GAMES.find((g) => g.id === stato.gameId);
+    const partita = stato;
+    window.Ascolto.apri({
+      abilitato: !!(gioco && gioco.ascolto),
+      griglia: el.paroleGriglia,
+      parole: partita.parole,
+      inCorso: () => stato === partita && partita.inCorso,
+      inPausa: () => stato === partita && !partita.inCorso && partita.accumulatoMs > 0,
+      tutteLette: () => fineDaAscolto(partita),
+    });
+  }
+
+  // Tutte le parole evidenziate (a voce o con doppio tocco): il cronometro si
+  // ferma subito; la schermata del tempo compare dopo un istante, cosi' si vede
+  // l'ultima parola accendersi.
+  function fineDaAscolto(partita) {
+    if (stato !== partita || partita.tipo !== "lettura") return;
+    if (partita.inCorso) pausaCronometro();
+    if (window.Ascolto) window.Ascolto.chiudi();
+    impostaBottoniLettura(false); // niente Pausa/Ricomincia nel breve intervallo
+    setTimeout(() => {
+      if (stato === partita && schermi.gioco.classList.contains("attivo")) mostraRisultati();
+    }, 700);
   }
 
   function renderParoleGriglia(parole) {
@@ -461,6 +498,7 @@
     el.cronometro.textContent = formattaTempo(0);
     el.btnPausa.textContent = "⏸️ Pausa";
     renderParoleGriglia(stato.parole);
+    apriAscolto();
     mostraSchermo("gioco");
     avviaCountdownESfocatura(() => avviaCronometro());
   }
@@ -473,6 +511,7 @@
   function finisciLettura() {
     if (!stato || stato.tipo !== "lettura") return;
     if (stato.inCorso) pausaCronometro();
+    if (window.Ascolto) window.Ascolto.chiudi();
     mostraRisultati();
   }
 
@@ -1331,6 +1370,7 @@
   function esciDalGioco() {
     clearInterval(timerIntervalId);
     annullaDragRiporto();
+    if (window.Ascolto) window.Ascolto.chiudi();
     stato = null;
     renderHome();
     mostraSchermo("home");

@@ -308,6 +308,75 @@ button {
   color: var(--verbo);
 }
 
+/* ---------- ASCOLTO a voce (js/ascolto.js, solo giochi con ascolto) ---------- */
+
+.parole-griglia.con-ascolto .parola-tile {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.parola-tile {
+  position: relative;
+}
+
+.parola-tile--letta {
+  background: var(--success-soft);
+  box-shadow: 0 0 0 4px var(--success), var(--shadow);
+  animation: tile-letta 0.3s ease;
+}
+
+.parola-tile--letta::after {
+  content: "✓";
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #2a8a63;
+}
+
+@keyframes tile-letta {
+  from { transform: scale(0.94); }
+  to { transform: scale(1); }
+}
+
+.interruttore[hidden],
+.ascolto-stato[hidden] {
+  display: none;
+}
+
+.ascolto-stato {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b6560;
+}
+
+.ascolto-stato--attivo::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--error);
+  animation: ascolto-pulsa 1.2s ease-in-out infinite;
+}
+
+.ascolto-stato--errore {
+  color: var(--error);
+}
+
+@keyframes ascolto-pulsa {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
 .gioco__azioni {
   display: flex;
   gap: 12px;
@@ -828,14 +897,14 @@ button:disabled {
 
 /* Interruttore "numeri" vicino al titolo */
 
-.riporto-titolo-gruppo {
+.titolo-gruppo {
   display: flex;
   align-items: center;
   gap: 8px 22px;
   flex-wrap: wrap;
 }
 
-.riporto-interruttore {
+.interruttore {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -846,14 +915,14 @@ button:disabled {
   -webkit-user-select: none;
 }
 
-.riporto-interruttore input {
+.interruttore input {
   position: absolute;
   opacity: 0;
   width: 1px;
   height: 1px;
 }
 
-.riporto-interruttore__traccia {
+.interruttore__traccia {
   position: relative;
   flex: none;
   width: 46px;
@@ -863,7 +932,7 @@ button:disabled {
   transition: background 0.15s ease;
 }
 
-.riporto-interruttore__traccia::after {
+.interruttore__traccia::after {
   content: "";
   position: absolute;
   top: 3px;
@@ -876,9 +945,9 @@ button:disabled {
   transition: transform 0.15s ease;
 }
 
-.riporto-interruttore input:checked + .riporto-interruttore__traccia { background: #3fa36b; }
-.riporto-interruttore input:checked + .riporto-interruttore__traccia::after { transform: translateX(20px); }
-.riporto-interruttore input:focus-visible + .riporto-interruttore__traccia { outline: 3px solid var(--ink); outline-offset: 2px; }
+.interruttore input:checked + .interruttore__traccia { background: #3fa36b; }
+.interruttore input:checked + .interruttore__traccia::after { transform: translateX(20px); }
+.interruttore input:focus-visible + .interruttore__traccia { outline: 3px solid var(--ink); outline-offset: 2px; }
 
 @media (max-width: 900px) {
   .riporto-area {
