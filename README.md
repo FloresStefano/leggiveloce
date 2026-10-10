@@ -391,6 +391,8 @@ python3 -m http.server 8000
 
 ## 🚀 Pubblicazione (GitHub Pages)
 
+**Dopo ogni modifica** cambia il numero `?v=...` dei file `.js`/`.css` in `index.html`: così i browser scaricano tutti i file nuovi insieme e non restano mezzi vecchi e mezzi nuovi (la home sparirebbe).
+
 Pubblicato gratuitamente da GitHub Pages, branch `main`, cartella
 principale — nessuna build. Ogni `git push` su `main` aggiorna il sito
 online in pochi minuti.
