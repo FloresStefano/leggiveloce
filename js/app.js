@@ -1793,6 +1793,10 @@
     const candidati = new Set();
     [b.r - b.a, b.r + b.a, b.r - b.b, b.r + b.b, b.a * (b.b + 1), b.a * (b.b - 1), (b.a + 1) * b.b, (b.a - 1) * b.b, b.r + 1, b.r - 1, b.r + 10, b.r - 10]
       .forEach((n) => { if (n > 0 && n !== b.r) candidati.add(n); });
+    // risultati piccoli (2 x 1...): pochi vicini sensati, si completa con altri numeri
+    for (let d = 2; candidati.size < 5; d++) {
+      [b.r + d, b.r - d].forEach((n) => { if (n > 0 && n !== b.r && candidati.size < 5 + 6) candidati.add(n); });
+    }
     const lista = mescola(Array.from(candidati)).slice(0, 5);
     return mescola([b.r].concat(lista));
   }
