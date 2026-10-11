@@ -374,17 +374,62 @@ Non usa nessun file di parole: i numeri sono generati dal codice
   900px di larghezza le zone si dispongono in colonna) per far stare tutto.
 - l'opzione dei numeri resta in memoria solo finché l'app è aperta.
 
+## ✖️ Gioco 8: "Tabelline"
+
+Dieci blocchetti, ognuno con una moltiplicazione (per esempio **3 × 4** o
+**5 × 7**), da sbloccare **dicendo ad alta voce l'intera operazione con il
+suo risultato**. Si parte dalla home con la scheda "Tabelline", poi conto alla
+rovescia 3-2-1 e parte il cronometro.
+
+1. I blocchetti sono 10 operazioni a caso: primo numero da **2 a 9**
+   (le tabelline dalla 2 alla 9), secondo numero da **1 a 10**. Mai due
+   blocchetti uguali e mai la stessa operazione a fattori scambiati (non
+   compaiono insieme 3 × 4 e 4 × 3). Il risultato non si vede ("= ?").
+2. Il bambino dice un'operazione, per esempio **"tre per quattro dodici"** o
+   **"tre per quattro uguale dodici"**. Il blocchetto giusto si illumina di
+   verde e mostra il risultato. Può dirle **in qualsiasi ordine**.
+   Un risultato sbagliato non fa nulla: l'ascolto continua.
+3. Si accetta: numeri a parole (anche "ventiquattro" o "venti quattro") o a
+   cifre; operatore "per", "x", "×", "volte"; "uguale", "fa", "fanno", "=" oppure
+   niente. Gli x1 e x10 vanno bene.
+4. Sotto i blocchetti c'è **"Ho sentito: ..."** con le ultime parole riconosciute
+   (verde = operazione completa e giusta, giallo = sta cominciando una).
+5. Quando tutti e 10 sono illuminati il cronometro si ferma e dopo circa un
+   secondo si apre la solita finestra di fine partita (tempo, stelline,
+   Ripeti / Nuova / Esci). **Ricomincia** rifà gli stessi blocchetti,
+   **Nuova sfida** ne estrae di nuovi.
+6. Stelle in questo gioco: **3★ sotto 30 s, 2★ sotto 45 s, 1★ sotto 60 s**
+   (`soglieStelle: [30, 45, 60]` in `js/games.js`).
+
+Il codice è in `js/app.js` (sezione "GIOCO 8") e usa la **modalità a più frasi**
+di `js/ascolto-frase.js` (`bersagli` + `inCorso()`): ogni frase si riconosce in
+tutto quello che il bambino ha detto (anche a cavallo di pause e riavvii del
+riconoscitore) e ogni blocchetto scatta una volta sola.
+
+**Scelte fatte in autonomia, da confermare o correggere:**
+- il microfono è acceso per tutta la partita, già dal conto alla rovescia, ma
+  quello che si dice durante il conto alla rovescia viene **scartato**; non c'è
+  l'interruttore "🎤 Ascolto" (la voce è il modo di giocare).
+- **ripiego senza microfono**: se la voce non è supportata o il permesso è
+  negato, si tocca un blocchetto e si sceglie il risultato tra 6.
+- "tre per uno tre" e "tre per dieci trenta" valgono come le altre; nel
+  riconoscimento "venti" + "quattro" valgono 24 tranne quando la cifra dopo è
+  l'inizio dell'operazione successiva ("cinquanta" + "tre per quattro").
+- non è stato possibile provare una voce vera: provato con un riconoscitore
+  simulato; la resa con voci di bambini va verificata sul tablet.
+- sul telefono in verticale la pagina può scorrere di poco: è pensata per tablet.
+
 Altri giochi compariranno in home come schede "Prossimamente" (disattive)
 finché non verranno definiti e attivati.
 
 ## 🗂️ Struttura del progetto
 
 ```
-index.html                             home, giochi 1-7, finestra di fine partita
+index.html                             home, giochi 1-8, finestra di fine partita
 css/style.css                          stile grafico, responsive, per tablet
 js/games.js                            elenco dei giochi (id, tipo, attivo/non attivo)
 js/ascolto.js                          ascolto a voce opzionale (Giochi 1, 3, 4, 5, 6)
-js/ascolto-frase.js                    ascolto della frase intera "sette più cinque uguale dodici" (Gioco 7)
+js/ascolto-frase.js                    ascolto di frasi intere "sette più cinque uguale dodici" (Giochi 7 e 8)
 js/giocatore.js                        giocatore di sessione, avatar, stelline
 js/fine-partita.js                     finestra di fine partita + coriandoli
 js/vendor/avataaars.bundle.js          generatore di avatar (DiceBear Avataaars, locale)
@@ -411,7 +456,7 @@ Nessun build step: file statici, pubblicati gratis con **GitHub Pages**.
    `<script src="js/games/<id-gioco>.js">` in `index.html` prima di
    `js/app.js`.
 2. Aggiungere una voce in `js/games.js` con `attivo: true` e un `tipo`
-   (`"lettura"`, `"abbinamento"`, `"frase"`, `"fette"`, `"lettere"`, `"riporto"`, o uno
+   (`"lettura"`, `"abbinamento"`, `"frase"`, `"fette"`, `"lettere"`, `"riporto"`, `"tabelline"`, o uno
    nuovo se la meccanica è diversa).
 3. Collegare l'id del gioco al suo elenco parole/frasi in `GAME_DATA`
    dentro `js/app.js`.

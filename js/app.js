@@ -36,6 +36,7 @@
     fette: $("#schermo-fette"),
     lettere: $("#schermo-lettere"),
     riporto: $("#schermo-riporto"),
+    tabelline: $("#schermo-tabelline"),
   };
 
   const el = {
@@ -102,6 +103,19 @@
     riportoAscoltoStato: $("#riporto-ascolto-stato"),
     riportoSentito: $("#riporto-sentito"),
     riportoOptNumeri: $("#riporto-opt-numeri"),
+    // gioco 8: tabelline
+    tabellineCronometro: $("#tabelline-cronometro"),
+    tabellineGriglia: $("#tabelline-griglia"),
+    tabellineCountdownOverlay: $("#tabelline-countdown-overlay"),
+    tabellineCountdownTesto: $("#tabelline-countdown-testo"),
+    tabellineAscoltoStato: $("#tabelline-ascolto-stato"),
+    tabellineSentito: $("#tabelline-sentito"),
+    tabellineScelta: $("#tabelline-scelta"),
+    tabellineSceltaDomanda: $("#tabelline-scelta-domanda"),
+    tabellineSceltaRisposte: $("#tabelline-scelta-risposte"),
+    tabellineBtnRicomincia: $("#tabelline-btn-ricomincia"),
+    tabellineBtnNuovaSfida: $("#tabelline-btn-nuova-sfida"),
+    tabellineBtnEsci: $("#tabelline-btn-esci"),
     riportoCountdownOverlay: $("#riporto-countdown-overlay"),
     riportoCountdownTesto: $("#riporto-countdown-testo"),
     riportoBtnRicomincia: $("#riporto-btn-ricomincia"),
@@ -230,6 +244,7 @@
     else if (gioco.tipo === "fette") avviaFette(gameId);
     else if (gioco.tipo === "lettere") avviaLettereSpeculari(gameId);
     else if (gioco.tipo === "riporto") avviaRiporto(gameId);
+    else if (gioco.tipo === "tabelline") avviaTabelline(gameId);
     else avviaLettura(gameId);
   }
 
@@ -417,13 +432,19 @@
 
   // Conto alla rovescia + sfocatura generico: usato dal gioco di lettura
   // e da "Parola a fette", ciascuno con il proprio contenuto/overlay.
+  // Se si esce dal gioco durante il conto alla rovescia, quello vecchio si
+  // ferma: non deve far partire il cronometro di un'altra partita.
+  let countdownCorrente = 0;
+
   function eseguiCountdown(contenutoEl, overlayEl, testoEl, impostaBottoni, dopo) {
+    const mio = ++countdownCorrente;
     contenutoEl.classList.add("sfocato");
     overlayEl.classList.add("attivo");
     impostaBottoni(false);
 
     let i = 0;
     function passo() {
+      if (mio !== countdownCorrente) return;
       if (i >= COUNTDOWN_STEPS.length) {
         overlayEl.classList.remove("attivo");
         contenutoEl.classList.remove("sfocato");
@@ -1325,24 +1346,23 @@
     });
   }
 
-  // Aggiorna solo la riga "Ho sentito: ..." (senza ridisegnare i pezzi).
-  function disegnaSentitoRiporto() {
-    const s = stato;
-    if (!s || s.fase !== "risposte" || s.modoRisposta !== "voce") return;
-    const box = el.riportoSentito;
+  // Riga "🎤 In ascolto  Ho sentito: ..." (usata dal Gioco 7 e dal Gioco 8):
+  // lo stato del microfono e le ultime parole riconosciute, con quelle della
+  // frase giusta colorate.
+  function riempiSentito(box, statoAscolto, parole) {
     box.innerHTML = "";
     const stat = document.createElement("span");
-    const tipo = s.statoAscolto.tipo === "attivo" ? "attivo" : s.statoAscolto.tipo ? "errore" : "attesa";
+    const tipo = statoAscolto.tipo === "attivo" ? "attivo" : statoAscolto.tipo ? "errore" : "attesa";
     stat.className = "sentito__stato sentito__stato--" + tipo;
-    stat.textContent = s.statoAscolto.testo ? (tipo === "attivo" ? "🎤 " : "") + s.statoAscolto.testo : "🎤 …";
+    stat.textContent = statoAscolto.testo ? (tipo === "attivo" ? "🎤 " : "") + statoAscolto.testo : "🎤 …";
     box.appendChild(stat);
     const testo = document.createElement("span");
     testo.className = "sentito__testo";
-    if (!s.sentito.parole.length) {
+    if (!parole.length) {
       testo.classList.add("sentito__testo--vuoto");
       testo.textContent = "Parla pure: qui vedrai quello che ascolto";
     } else {
-      s.sentito.parole.forEach((p) => {
+      parole.forEach((p) => {
         const w = document.createElement("span");
         w.className = "sentito__parola" + (p.stato ? " sentito__parola--" + p.stato : "");
         w.textContent = p.testo;
@@ -1351,6 +1371,13 @@
       });
     }
     box.appendChild(testo);
+  }
+
+  // Aggiorna solo la riga "Ho sentito: ..." (senza ridisegnare i pezzi).
+  function disegnaSentitoRiporto() {
+    const s = stato;
+    if (!s || s.fase !== "risposte" || s.modoRisposta !== "voce") return;
+    riempiSentito(el.riportoSentito, s.statoAscolto, s.sentito.parole);
     el.riportoAscoltoStato.hidden = true;
   }
 
@@ -1563,9 +1590,246 @@
     riempi(el.riportoNumeriRiporto, CELLE_RIPORTO);
   }
 
+  // ---------- GIOCO 8: Tabelline ----------
+
+  const TABELLINE_BLOCCHI = 10;
+
+  // 10 moltiplicazioni a caso: tabellina da 2 a 9 per un numero da 1 a 10.
+  // Mai due blocchetti identici ne' "3 x 4" insieme a "4 x 3".
+  function generaTabelline() {
+    const blocchi = [];
+    const usate = new Set();
+    while (blocchi.length < TABELLINE_BLOCCHI) {
+      const a = 2 + Math.floor(Math.random() * 8);
+      const b = 1 + Math.floor(Math.random() * 10);
+      const chiave = [a, b].sort((x, y) => x - y).join("x");
+      if (usate.has(chiave)) continue;
+      usate.add(chiave);
+      blocchi.push({ a, b, r: a * b, trovato: false });
+    }
+    return blocchi;
+  }
+
+  function impostaBottoniTabelline(abilitati) {
+    el.tabellineBtnRicomincia.disabled = !abilitati;
+    el.tabellineBtnNuovaSfida.disabled = !abilitati;
+    // tabelline-btn-esci resta sempre cliccabile
+  }
+
+  function avviaCountdownTabelline(dopo) {
+    eseguiCountdown(
+      el.tabellineGriglia,
+      el.tabellineCountdownOverlay,
+      el.tabellineCountdownTesto,
+      impostaBottoniTabelline,
+      dopo
+    );
+  }
+
+  function avviaTabelline(gameId) {
+    const gioco = GAMES.find((g) => g.id === gameId);
+    if (!gioco || !gioco.attivo) return;
+    if (window.AscoltoFrase) window.AscoltoFrase.ferma();
+    clearInterval(timerIntervalId);
+
+    stato = {
+      gameId,
+      tipo: "tabelline",
+      blocchi: generaTabelline(),
+      trovati: 0,
+      modo: null, // "voce" o "scelta" (ripiego senza microfono)
+      sentito: { parole: [] },
+      statoAscolto: { testo: "", tipo: "" },
+      selezionato: null,
+      sbagliate: [],
+      accumulatoMs: 0,
+      inCorso: false,
+      inizioSegmento: null,
+      cronometroEl: el.tabellineCronometro,
+    };
+    iniziaPartitaTabelline();
+  }
+
+  // Parte (o riparte con gli stessi blocchetti) la partita: schermata,
+  // microfono e conto alla rovescia.
+  function iniziaPartitaTabelline() {
+    el.tabellineCronometro.textContent = formattaTempo(0);
+    renderTabelline();
+    mostraSchermo("tabelline");
+    apriAscoltoTabelline();
+    renderStatoTabelline();
+    avviaCountdownTabelline(() => avviaCronometro());
+  }
+
+  function ricominciaTabelline() {
+    if (!stato || stato.tipo !== "tabelline") return;
+    clearInterval(timerIntervalId);
+    if (window.AscoltoFrase) window.AscoltoFrase.ferma();
+    stato.blocchi.forEach((b) => { b.trovato = false; });
+    stato.trovati = 0;
+    stato.selezionato = null;
+    stato.sbagliate = [];
+    stato.accumulatoMs = 0;
+    stato.inCorso = false;
+    stato.inizioSegmento = null;
+    iniziaPartitaTabelline();
+  }
+
+  function nuovaSfidaTabelline() {
+    if (!stato) return;
+    avviaTabelline(stato.gameId);
+  }
+
+  function renderTabelline() {
+    el.tabellineGriglia.innerHTML = "";
+    stato.blocchi.forEach((b, i) => {
+      const tile = document.createElement("div");
+      tile.className = "parola-tile" + (b.trovato ? " parola-tile--letta" : "");
+      tile.dataset.i = String(i);
+      tile.innerHTML =
+        `<span class="parola-tile__parola">${b.a} × ${b.b}</span>` +
+        `<span class="tabellina-risultato">= ${b.trovato ? b.r : "?"}</span>`;
+      el.tabellineGriglia.appendChild(tile);
+    });
+    el.tabellineGriglia.classList.toggle("con-scelta", stato.modo === "scelta");
+    el.tabellineScelta.hidden = true;
+  }
+
+  // Aggiorna solo la riga dello stato / "Ho sentito" e, nel ripiego, la scelta.
+  function renderStatoTabelline() {
+    const s = stato;
+    if (!s || s.tipo !== "tabelline") return;
+    el.tabellineGriglia.classList.toggle("con-scelta", s.modo === "scelta");
+    if (s.modo === "scelta") {
+      el.tabellineSentito.hidden = true;
+      el.tabellineAscoltoStato.hidden = !s.statoAscolto.testo;
+      el.tabellineAscoltoStato.textContent = s.statoAscolto.testo;
+    } else {
+      el.tabellineAscoltoStato.hidden = true;
+      el.tabellineSentito.hidden = false;
+      riempiSentito(el.tabellineSentito, s.statoAscolto, s.sentito.parole);
+    }
+  }
+
+  function apriAscoltoTabelline() {
+    const s = stato;
+    const AF = window.AscoltoFrase;
+    s.sentito = { parole: [] };
+    s.statoAscolto = { testo: "", tipo: "" };
+    if (!AF || !AF.supportato) {
+      s.modo = "scelta";
+      s.statoAscolto = { testo: "Voce non supportata da questo browser: tocca un blocchetto e scegli la risposta.", tipo: "errore" };
+      return;
+    }
+    s.modo = "voce";
+    const partita = s;
+    // Parte subito (nello stesso tocco su Via/Ricomincia); quello che si sente
+    // durante il conto alla rovescia viene scartato (inCorso).
+    AF.avvia({
+      bersagli: s.blocchi.map((b, i) => ({ id: i, varianti: AF.bersagliMoltiplicazione(b.a, b.b) })),
+      inCorso: () => stato === partita && partita.inCorso,
+      onStato: (testo, tipo) => {
+        if (stato !== partita) return;
+        partita.statoAscolto = { testo, tipo };
+        renderStatoTabelline();
+      },
+      onTesto: (t) => {
+        if (stato !== partita) return;
+        partita.sentito = { parole: t.parole };
+        renderStatoTabelline();
+      },
+      onTrovata: (i) => {
+        if (stato !== partita) return;
+        segnaBloccoTabelline(i);
+      },
+      onErrore: (tipo) => {
+        if (stato !== partita) return;
+        partita.modo = "scelta";
+        partita.statoAscolto = {
+          testo:
+            (tipo === "negato" ? "Microfono non consentito" : "Il microfono non funziona") +
+            ": tocca un blocchetto e scegli la risposta.",
+          tipo: "errore",
+        };
+        renderStatoTabelline();
+      },
+    });
+  }
+
+  // Il blocchetto i e' stato detto bene: si illumina; se sono tutti, fine partita.
+  function segnaBloccoTabelline(i) {
+    const s = stato;
+    if (!s || s.tipo !== "tabelline" || !s.inCorso) return;
+    const b = s.blocchi[i];
+    if (!b || b.trovato) return;
+    b.trovato = true;
+    s.trovati++;
+    const tile = el.tabellineGriglia.children[i];
+    if (tile) {
+      tile.classList.add("parola-tile--letta");
+      tile.classList.remove("parola-tile--scelto");
+      tile.setAttribute("aria-label", `${b.a} per ${b.b} fa ${b.r}`);
+      const ris = tile.querySelector(".tabellina-risultato");
+      if (ris) ris.textContent = `= ${b.r}`;
+    }
+    if (s.selezionato === i) chiudiSceltaTabelline();
+    if (s.trovati === s.blocchi.length) {
+      if (window.AscoltoFrase) window.AscoltoFrase.ferma();
+      pausaCronometro();
+      mostraModaleFineTra(1000);
+    }
+  }
+
+  // ---- Ripiego senza microfono: si tocca il blocchetto e si sceglie il risultato ----
+
+  function chiudiSceltaTabelline() {
+    stato.selezionato = null;
+    stato.sbagliate = [];
+    el.tabellineScelta.hidden = true;
+    $$(".parola-tile--scelto", el.tabellineGriglia).forEach((t) => t.classList.remove("parola-tile--scelto"));
+  }
+
+  function risultatiVicini(b) {
+    const candidati = new Set();
+    [b.r - b.a, b.r + b.a, b.r - b.b, b.r + b.b, b.a * (b.b + 1), b.a * (b.b - 1), (b.a + 1) * b.b, (b.a - 1) * b.b, b.r + 1, b.r - 1, b.r + 10, b.r - 10]
+      .forEach((n) => { if (n > 0 && n !== b.r) candidati.add(n); });
+    const lista = mescola(Array.from(candidati)).slice(0, 5);
+    return mescola([b.r].concat(lista));
+  }
+
+  function clickTabelline(e) {
+    const s = stato;
+    if (!s || s.tipo !== "tabelline" || s.modo !== "scelta" || !s.inCorso) return;
+    const tile = e.target.closest(".parola-tile");
+    if (!tile || tile.classList.contains("parola-tile--letta")) return;
+    const i = Number(tile.dataset.i);
+    chiudiSceltaTabelline();
+    s.selezionato = i;
+    tile.classList.add("parola-tile--scelto");
+    const b = s.blocchi[i];
+    el.tabellineSceltaDomanda.textContent = `Quanto fa ${b.a} × ${b.b}?`;
+    el.tabellineSceltaRisposte.innerHTML = "";
+    risultatiVicini(b).forEach((n) => {
+      const bt = document.createElement("button");
+      bt.type = "button";
+      bt.className = "riporto-risposta";
+      bt.textContent = String(n);
+      bt.addEventListener("click", () => {
+        if (n === b.r) segnaBloccoTabelline(i);
+        else {
+          bt.classList.add("sbagliata");
+          bt.disabled = true;
+        }
+      });
+      el.tabellineSceltaRisposte.appendChild(bt);
+    });
+    el.tabellineScelta.hidden = false;
+  }
+
   // ---------- Uscita dal gioco ----------
 
   function esciDalGioco() {
+    countdownCorrente++; // ferma un eventuale conto alla rovescia in corso
     clearInterval(timerIntervalId);
     annullaDragRiporto();
     if (window.AscoltoFrase) window.AscoltoFrase.ferma();
@@ -1614,6 +1878,7 @@
     else if (stato.tipo === "fette") ricominciaFette();
     else if (stato.tipo === "lettere") ricominciaLettereSpeculari();
     else if (stato.tipo === "riporto") ricominciaRiporto();
+    else if (stato.tipo === "tabelline") ricominciaTabelline();
     else ricominciaAbbinamento();
   }
 
@@ -1623,6 +1888,7 @@
     else if (stato.tipo === "fette") nuovaSfidaFette();
     else if (stato.tipo === "lettere") nuovaSfidaLettereSpeculari();
     else if (stato.tipo === "riporto") nuovaSfidaRiporto();
+    else if (stato.tipo === "tabelline") nuovaSfidaTabelline();
     else nuovaSfidaAbbinamento();
   }
 
@@ -1653,6 +1919,12 @@
     el.lettereBtnRicomincia.addEventListener("click", ricominciaLettereSpeculari);
     el.lettereBtnNuovaSfida.addEventListener("click", nuovaSfidaLettereSpeculari);
     el.lettereBtnEsci.addEventListener("click", esciDalGioco);
+
+    // gioco 8: tabelline
+    el.tabellineBtnRicomincia.addEventListener("click", ricominciaTabelline);
+    el.tabellineBtnNuovaSfida.addEventListener("click", nuovaSfidaTabelline);
+    el.tabellineBtnEsci.addEventListener("click", esciDalGioco);
+    el.tabellineGriglia.addEventListener("click", clickTabelline);
 
     // gioco 7: somme col riporto
     costruisciNumeriRiporto();

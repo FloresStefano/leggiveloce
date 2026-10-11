@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Lexend:wght@400;600;700&display=swap" rel="stylesheet" />
 
-<link rel="stylesheet" href="css/style.css?v=20261013" />
+<link rel="stylesheet" href="css/style.css?v=20261014" />
 </head>
 <body>
 
@@ -145,6 +145,42 @@
         <button id="fette-btn-ricomincia" class="btn-secondario">🔁 Ricomincia</button>
         <button id="fette-btn-nuova-sfida" class="btn-secondario">🎲 Nuova sfida</button>
         <button id="fette-btn-esci" class="btn-secondario">🏠 Esci</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCHERMATA GIOCO 8: Tabelline -->
+  <section id="schermo-tabelline" class="screen">
+    <div class="gioco">
+      <div class="gioco__header gioco__header--compatto">
+        <div class="titolo-gruppo">
+          <div class="gioco__titolo">✖️ Tabelline</div>
+        </div>
+        <div id="tabelline-cronometro" class="cronometro">0.0s</div>
+      </div>
+
+      <p class="abbina-istruzioni">Dì ad alta voce ogni tabellina con il suo risultato, per esempio <strong>"due per cinque dieci"</strong>: il blocchetto si illumina.</p>
+
+      <div class="gioco-area">
+        <div id="tabelline-griglia" class="parole-griglia tabelline-griglia"></div>
+
+        <div id="tabelline-countdown-overlay" class="countdown-overlay">
+          <span id="tabelline-countdown-testo" class="countdown-testo">3</span>
+        </div>
+      </div>
+
+      <p id="tabelline-ascolto-stato" class="riporto-ascolto-stato" aria-live="polite" hidden></p>
+      <p id="tabelline-sentito" class="riporto-sentito tabelline-sentito" aria-live="polite"></p>
+
+      <div id="tabelline-scelta" class="tabelline-scelta" hidden>
+        <h3 id="tabelline-scelta-domanda" class="riporto-domanda"></h3>
+        <div id="tabelline-scelta-risposte" class="riporto-risposte__righe"></div>
+      </div>
+
+      <div class="gioco__azioni">
+        <button id="tabelline-btn-ricomincia" class="btn-secondario">🔁 Ricomincia</button>
+        <button id="tabelline-btn-nuova-sfida" class="btn-secondario">🎲 Nuova sfida</button>
+        <button id="tabelline-btn-esci" class="btn-secondario">🏠 Esci</button>
       </div>
     </div>
   </section>
@@ -289,17 +325,17 @@
 <canvas id="coriandoli" class="coriandoli" hidden aria-hidden="true"></canvas>
 
 
-<script src="js/games/bisillabe-piane-semplici.js?v=20261013"></script>
-<script src="js/games/trisillabe-piane.js?v=20261013"></script>
-<script src="js/games/frasi.js?v=20261013"></script>
-<script src="js/games/parola-a-fette.js?v=20261013"></script>
-<script src="js/games/lettere-speculari.js?v=20261013"></script>
-<script src="js/vendor/avataaars.bundle.js?v=20261013"></script>
-<script src="js/giocatore.js?v=20261013"></script>
-<script src="js/games.js?v=20261013"></script>
-<script src="js/ascolto.js?v=20261013"></script>
-<script src="js/ascolto-frase.js?v=20261013"></script>
-<script src="js/fine-partita.js?v=20261013"></script>
-<script src="js/app.js?v=20261013"></script>
+<script src="js/games/bisillabe-piane-semplici.js?v=20261014"></script>
+<script src="js/games/trisillabe-piane.js?v=20261014"></script>
+<script src="js/games/frasi.js?v=20261014"></script>
+<script src="js/games/parola-a-fette.js?v=20261014"></script>
+<script src="js/games/lettere-speculari.js?v=20261014"></script>
+<script src="js/vendor/avataaars.bundle.js?v=20261014"></script>
+<script src="js/giocatore.js?v=20261014"></script>
+<script src="js/games.js?v=20261014"></script>
+<script src="js/ascolto.js?v=20261014"></script>
+<script src="js/ascolto-frase.js?v=20261014"></script>
+<script src="js/fine-partita.js?v=20261014"></script>
+<script src="js/app.js?v=20261014"></script>
 </body>
 </html>
