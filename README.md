@@ -394,12 +394,24 @@ operazione con il suo risultato**. Si parte dalla home con la scheda
 3. Si accetta: numeri a parole (anche "ventiquattro" o "venti quattro") o a
    cifre; operatore "per", "x", "×", "volte"; "uguale", "fa", "fanno", "=" oppure
    niente. Gli x1 e x10 vanno bene.
-4. Sotto i blocchetti c'è **"Ho sentito: ..."** con le ultime parole riconosciute
+   **Numeri incollati**: il riconoscitore scrive spesso "4x28" per "4 x 2 8".
+   Dopo il "per" i numeri sono b (da 1 a 10) e il risultato (da 1 a 100), quindi
+   quello che conta è la sequenza delle cifre ("2" + "8" = "28"), non dove
+   cadono gli spazi: "4x28", "4x2 8", "4 x 28", "4x2=8" e "quattro per ventotto"
+   valgono tutti 4 × 2 = 8. Si accetta anche un primo numero incollato al
+   risultato precedente ("4x284x312"). Un risultato sbagliato ("4x281", "4x29")
+   non vale mai. Il codice è `occorrenzeCifre` in `js/ascolto-frase.js`.
+4. **Suggerimento**: con un doppio click (o doppio tocco) su un blocchetto
+   non ancora detto, il risultato compare per **un secondo** (in arancione) e poi
+   sparisce. Il blocchetto non si illumina: va detta comunque la frase intera.
+   Non funziona durante il conto alla rovescia, e non costa niente (né tempo né
+   stelline).
+5. Sotto i blocchetti c'è **"Ho sentito: ..."** con le ultime parole riconosciute
    (verde = operazione completa e giusta, giallo = sta cominciando una).
-5. Quando tutti e 10 sono illuminati il cronometro si ferma e dopo circa un
+6. Quando tutti e 10 sono illuminati il cronometro si ferma e dopo circa un
    secondo si apre la solita finestra di fine partita (tempo, stelline,
    Ripeti / Nuova / Esci).
-6. Stelle in questo gioco: **3★ sotto 30 s, 2★ sotto 45 s, 1★ sotto 60 s**
+7. Stelle in questo gioco: **3★ sotto 30 s, 2★ sotto 45 s, 1★ sotto 60 s**
    (`soglieStelle: [30, 45, 60]` in `js/games.js`).
 
 Il codice è in `js/app.js` (sezione "GIOCO 8") e usa la **modalità a più frasi**

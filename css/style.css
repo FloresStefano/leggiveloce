@@ -1356,3 +1356,9 @@ button:disabled {
 
 .tabelline-griglia.con-scelta .parola-tile:not(.parola-tile--letta) { cursor: pointer; }
 .tabelline-griglia .parola-tile--scelto { box-shadow: 0 0 0 4px var(--accent), var(--shadow); }
+
+/* Suggerimento (doppio click su un blocchetto): il risultato si vede per un secondo,
+   in arancione, senza dare il blocchetto per fatto. */
+.tabelline-griglia .parola-tile { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+.tabelline-griglia .parola-tile--suggerito { box-shadow: 0 0 0 3px #f2a33a, var(--shadow); }
+.tabelline-griglia .parola-tile--suggerito .tabellina-risultato { color: #c46a00; opacity: 1; }

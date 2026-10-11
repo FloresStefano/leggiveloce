@@ -1680,6 +1680,8 @@
   }
 
   function renderTabelline() {
+    if (tabellineSuggerimento) clearTimeout(tabellineSuggerimento.timer); // le tessere vengono ricreate
+    tabellineSuggerimento = null;
     el.tabellineTitolo.textContent = `✖️ Tabellina del ${stato.tabellina}`;
     el.tabellineGriglia.innerHTML = "";
     stato.blocchi.forEach((b, i) => {
@@ -1726,7 +1728,7 @@
     // Parte subito (nello stesso tocco su Via/Ricomincia); quello che si sente
     // durante il conto alla rovescia viene scartato (inCorso).
     AF.avvia({
-      bersagli: s.blocchi.map((b, i) => ({ id: i, varianti: AF.bersagliMoltiplicazione(b.a, b.b) })),
+      bersagli: s.blocchi.map((b, i) => ({ id: i, varianti: AF.bersagliMoltiplicazione(b.a, b.b), cifre: { a: b.a, s: String(b.b) + String(b.r) } })),
       inCorso: () => stato === partita && partita.inCorso,
       onStato: (testo, tipo) => {
         if (stato !== partita) return;
@@ -1767,7 +1769,7 @@
     const tile = el.tabellineGriglia.children[i];
     if (tile) {
       tile.classList.add("parola-tile--letta");
-      tile.classList.remove("parola-tile--scelto");
+      tile.classList.remove("parola-tile--scelto", "parola-tile--suggerito");
       tile.setAttribute("aria-label", `${b.a} per ${b.b} fa ${b.r}`);
       const ris = tile.querySelector(".tabellina-risultato");
       if (ris) ris.textContent = `= ${b.r}`;
@@ -1799,6 +1801,59 @@
     }
     const lista = mescola(Array.from(candidati)).slice(0, 5);
     return mescola([b.r].concat(lista));
+  }
+
+  // Suggerimento: doppio click/tocco su un blocchetto non ancora detto mostra per
+  // un secondo il risultato; per illuminarlo bisogna comunque dire la frase intera.
+  // Il doppio tocco si riconosce a mano (due tocchi sullo stesso blocchetto entro 450 ms).
+  const SUGGERIMENTO_MS = 1000;
+  const DOPPIO_TABELLINA_MS = 450;
+  let tabellineUltimoTocco = { i: -1, t: 0 };
+  let tabellineSuggerimento = null; // { tile, i, timer }
+
+  function nascondiSuggerimentoTabelline() {
+    const g = tabellineSuggerimento;
+    if (!g) return;
+    clearTimeout(g.timer);
+    tabellineSuggerimento = null;
+    g.tile.classList.remove("parola-tile--suggerito");
+    const b = stato && stato.tipo === "tabelline" ? stato.blocchi[g.i] : null;
+    const r = g.tile.querySelector(".tabellina-risultato");
+    // se nel frattempo il blocchetto e' stato detto, il risultato resta
+    if (r && !(b && b.trovato) && g.tile.isConnected) r.textContent = "= ?";
+  }
+
+  function suggerimentoTabelline(tile, i) {
+    const s = stato;
+    nascondiSuggerimentoTabelline();
+    const r = tile.querySelector(".tabellina-risultato");
+    if (!r) return;
+    r.textContent = `= ${s.blocchi[i].r}`;
+    tile.classList.add("parola-tile--suggerito");
+    const partita = s;
+    tabellineSuggerimento = {
+      tile,
+      i,
+      timer: setTimeout(() => {
+        if (stato === partita) nascondiSuggerimentoTabelline();
+        else tabellineSuggerimento = null;
+      }, SUGGERIMENTO_MS),
+    };
+  }
+
+  function toccoTabelline(e) {
+    const s = stato;
+    if (!s || s.tipo !== "tabelline" || !s.inCorso) return;
+    const tile = e.target.closest(".parola-tile");
+    if (!tile || tile.classList.contains("parola-tile--letta")) return;
+    const i = Number(tile.dataset.i);
+    const ora = performance.now();
+    if (tabellineUltimoTocco.i === i && ora - tabellineUltimoTocco.t <= DOPPIO_TABELLINA_MS) {
+      tabellineUltimoTocco = { i: -1, t: 0 };
+      suggerimentoTabelline(tile, i);
+    } else {
+      tabellineUltimoTocco = { i, t: ora };
+    }
   }
 
   function clickTabelline(e) {
@@ -1929,6 +1984,7 @@
     el.tabellineBtnNuovaSfida.addEventListener("click", nuovaSfidaTabelline);
     el.tabellineBtnEsci.addEventListener("click", esciDalGioco);
     el.tabellineGriglia.addEventListener("click", clickTabelline);
+    el.tabellineGriglia.addEventListener("click", toccoTabelline);
 
     // gioco 7: somme col riporto
     costruisciNumeriRiporto();

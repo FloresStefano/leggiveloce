@@ -28,7 +28,9 @@
  * Seconda modalita' (Gioco 8, Tabelline): piu' frasi attese insieme, in
  * qualsiasi ordine. Si passa "bersagli" (invece di "bersaglio"):
  *   AscoltoFrase.bersagliMoltiplicazione(a, b)  -> varianti ["#3","*","#4","=","#12"] e ["#3","*","#4","#12"]
- *   AscoltoFrase.avvia({ bersagli: [{ id, varianti: [...] }], inCorso, onTesto, onTrovata(id), ... })
+ *   AscoltoFrase.avvia({ bersagli: [{ id, varianti: [...], cifre: { a, s } }], inCorso, onTesto, onTrovata(id), ... })
+ *   ("cifre" e' facoltativo: a = primo numero, s = secondo numero e risultato scritti
+ *   di seguito, es. { a: 4, s: "28" } per 4 x 2 = 8: riconosce anche "4x28".)
  * onTrovata(id) arriva una volta per ogni frase la prima volta che e' completa;
  * "inCorso()" (facoltativa) dice se il gioco sta ascoltando: finche' risponde
  * false (conto alla rovescia) quello che si sente viene scartato.
@@ -55,7 +57,7 @@
   const NUMERI = {
     zero: 0, uno: 1, un: 1, una: 1, due: 2, tre: 3, quattro: 4, cinque: 5, sei: 6, sette: 7,
     otto: 8, nove: 9, dieci: 10, undici: 11, dodici: 12, tredici: 13, quattordici: 14,
-    quindici: 15, sedici: 16, diciassette: 17, diciotto: 18, diciannove: 19, venti: 20,
+    quindici: 15, sedici: 16, diciassette: 17, diciotto: 18, diciannove: 19, venti: 20, cento: 100,
   };
   // Fino a 90 (serve alle tabelline): venti, ventuno ... novantanove.
   (function () {
@@ -164,6 +166,50 @@
     return out;
   }
 
+  // Cifre di un numero ("#28" -> "28"), oppure null se la voce non e' un numero.
+  function cifreNumero(c) {
+    const m = /^#(\d+)$/.exec(c);
+    return m ? String(+m[1]) : null;
+  }
+
+  // Lettura "a cifre" di una moltiplicazione a x b = r, per quando il
+  // riconoscitore incolla i numeri ("4x28" per "4 x 2 8"). Dopo l'operatore i
+  // due numeri sono b (1-10) e r (1-100): quello che conta e' la sequenza delle
+  // loro cifre ("2" + "8" = "28"), non dove cadono gli spazi. "cifre" e' b e r
+  // scritti di seguito. Si accetta:
+  //   - il primo numero come cifra finale di una voce ("84 x ..." = "8" + "4 x");
+  //   - "=" in mezzo (e' trasparente);
+  //   - una sola cifra in piu' in coda, uguale ad "a", se poi arriva un altro
+  //     operatore: e' il primo numero dell'operazione dopo ("4x284x312").
+  // Un risultato sbagliato ("4x281") non e' mai accettato.
+  function occorrenzeCifre(voci, a, cifre) {
+    const idx = [];
+    voci.forEach((v, i) => { if (!v.ign) idx.push(i); });
+    const sa = String(a);
+    const out = [];
+    for (let p = 1; p < idx.length; p++) {
+      if (voci[idx[p]].c !== "*") continue;
+      const prima = cifreNumero(voci[idx[p - 1]].c);
+      if (prima === null || !prima.endsWith(sa)) continue;
+      let d = "";
+      let ultimo = -1;
+      let q = p + 1;
+      for (; q < idx.length; q++) {
+        const c = voci[idx[q]].c;
+        if (c === "=") continue;
+        const n = cifreNumero(c);
+        if (n === null) break;
+        d += n;
+        ultimo = q;
+      }
+      if (ultimo < 0) continue;
+      const seguita = q < idx.length && voci[idx[q]].c === "*";
+      const giusta = d === cifre || (seguita && d.length > cifre.length && d.startsWith(cifre) && d.slice(cifre.length) === sa);
+      if (giusta) out.push({ da: idx[p - 1], a: idx[ultimo] });
+    }
+    return out;
+  }
+
   // Quante delle ultime parole sono l'inizio (non ancora completo) di una delle frasi.
   function codaParziale(voci, frasi) {
     const idx = [];
@@ -236,7 +282,10 @@
       if (i === 0) base = voci;
       cfg.bersagli.forEach((b) => {
         if (trovati.has(b.id) || nuovi.indexOf(b.id) >= 0) return;
-        if (b.varianti.some((f) => occorrenzeComplete(voci, f).length > 0)) nuovi.push(b.id);
+        if (
+          b.varianti.some((f) => occorrenzeComplete(voci, f).length > 0) ||
+          (b.cifre && occorrenzeCifre(voci, b.cifre.a, b.cifre.s).length > 0)
+        ) nuovi.push(b.id);
       });
     }
     if (!base) return;
@@ -248,6 +297,7 @@
       b.varianti.forEach((f) => {
         occorrenzeComplete(base, f).forEach((o) => { for (let i = o.da; i <= o.a; i++) stati[i] = "ok"; });
       });
+      if (b.cifre) occorrenzeCifre(base, b.cifre.a, b.cifre.s).forEach((o) => { for (let i = o.da; i <= o.a; i++) stati[i] = "ok"; });
     });
     const parz = codaParziale(base, [].concat(...cfg.bersagli.filter((b) => !trovati.has(b.id) && nuovi.indexOf(b.id) < 0).map((b) => b.varianti)));
     if (parz) for (let i = parz.da; i <= parz.a; i++) if (!stati[i]) stati[i] = "parz";
@@ -371,6 +421,7 @@
     supportato: !!SR,
     bersaglio,
     bersagliMoltiplicazione,
+    _occorrenzeCifre: occorrenzeCifre,
 
     /** Parte l'ascolto. Va chiamato dentro un tocco/click (come richiedono alcuni browser). */
     avvia(c) {
