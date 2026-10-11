@@ -17,7 +17,7 @@
  * - "riporto": somma con riporto da fare con i bastoncini (si spezzano, si
  *   trascinano nella scatola da 10 e in quella del riporto) + scelta del
  *   risultato; non usa nessun file di parole (Gioco 7)
- * - "tabelline": 10 moltiplicazioni (tabellina da 2 a 9 x da 1 a 10) da dire
+ * - "tabelline": una tabellina intera (da 2 a 9) per partita: 10 operazioni in ordine, da dire
  *   ad alta voce con il risultato ("tre per quattro dodici"); ogni frase
  *   giusta evidenzia il suo blocchetto; non usa nessun file di parole (Gioco 8)
  *
@@ -110,7 +110,7 @@ const GAMES = [
     titolo: "Tabelline",
     emoji: "✖️",
     colore: "#2f9bd8",
-    descrizione: "Dì ogni tabellina con il suo risultato e illumina tutti i blocchetti, più veloce che puoi.",
+    descrizione: "Dì ad alta voce tutte le operazioni di una tabellina con il loro risultato, più veloce che puoi.",
     tipo: "tabelline",
     attivo: true,
     soglieStelle: [30, 45, 60],

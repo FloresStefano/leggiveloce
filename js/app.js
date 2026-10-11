@@ -105,6 +105,7 @@
     riportoOptNumeri: $("#riporto-opt-numeri"),
     // gioco 8: tabelline
     tabellineCronometro: $("#tabelline-cronometro"),
+    tabellineTitolo: $("#tabelline-titolo"),
     tabellineGriglia: $("#tabelline-griglia"),
     tabellineCountdownOverlay: $("#tabelline-countdown-overlay"),
     tabellineCountdownTesto: $("#tabelline-countdown-testo"),
@@ -1596,18 +1597,14 @@
 
   // 10 moltiplicazioni a caso: tabellina da 2 a 9 per un numero da 1 a 10.
   // Mai due blocchetti identici ne' "3 x 4" insieme a "4 x 3".
-  function generaTabelline() {
+  // Una tabellina intera (da 2 a 9) per partita: le 10 operazioni n x 1 ... n x 10
+  // in ordine crescente. "escludi" evita di ripetere la stessa tabellina di seguito.
+  function generaTabelline(escludi) {
+    const possibili = [2, 3, 4, 5, 6, 7, 8, 9].filter((n) => n !== escludi);
+    const n = possibili[Math.floor(Math.random() * possibili.length)];
     const blocchi = [];
-    const usate = new Set();
-    while (blocchi.length < TABELLINE_BLOCCHI) {
-      const a = 2 + Math.floor(Math.random() * 8);
-      const b = 1 + Math.floor(Math.random() * 10);
-      const chiave = [a, b].sort((x, y) => x - y).join("x");
-      if (usate.has(chiave)) continue;
-      usate.add(chiave);
-      blocchi.push({ a, b, r: a * b, trovato: false });
-    }
-    return blocchi;
+    for (let b = 1; b <= TABELLINE_BLOCCHI; b++) blocchi.push({ a: n, b, r: n * b, trovato: false });
+    return { tabellina: n, blocchi };
   }
 
   function impostaBottoniTabelline(abilitati) {
@@ -1626,16 +1623,18 @@
     );
   }
 
-  function avviaTabelline(gameId) {
+  function avviaTabelline(gameId, escludi) {
     const gioco = GAMES.find((g) => g.id === gameId);
     if (!gioco || !gioco.attivo) return;
     if (window.AscoltoFrase) window.AscoltoFrase.ferma();
     clearInterval(timerIntervalId);
 
+    const estratta = generaTabelline(escludi);
     stato = {
       gameId,
       tipo: "tabelline",
-      blocchi: generaTabelline(),
+      tabellina: estratta.tabellina,
+      blocchi: estratta.blocchi,
       trovati: 0,
       modo: null, // "voce" o "scelta" (ripiego senza microfono)
       sentito: { parole: [] },
@@ -1677,10 +1676,11 @@
 
   function nuovaSfidaTabelline() {
     if (!stato) return;
-    avviaTabelline(stato.gameId);
+    avviaTabelline(stato.gameId, stato.tabellina);
   }
 
   function renderTabelline() {
+    el.tabellineTitolo.textContent = `✖️ Tabellina del ${stato.tabellina}`;
     el.tabellineGriglia.innerHTML = "";
     stato.blocchi.forEach((b, i) => {
       const tile = document.createElement("div");

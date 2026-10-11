@@ -376,15 +376,17 @@ Non usa nessun file di parole: i numeri sono generati dal codice
 
 ## ✖️ Gioco 8: "Tabelline"
 
-Dieci blocchetti, ognuno con una moltiplicazione (per esempio **3 × 4** o
-**5 × 7**), da sbloccare **dicendo ad alta voce l'intera operazione con il
-suo risultato**. Si parte dalla home con la scheda "Tabelline", poi conto alla
-rovescia 3-2-1 e parte il cronometro.
+Una **tabellina intera alla volta**: dieci blocchetti, le operazioni
+**n × 1, n × 2 ... n × 10** della tabellina estratta (per esempio la tabellina
+del 3: 3 × 1 ... 3 × 10), in **ordine crescente** da sinistra a destra e
+dall'alto in basso. Ognuno si sblocca **dicendo ad alta voce l'intera
+operazione con il suo risultato**. Si parte dalla home con la scheda
+"Tabelline", poi conto alla rovescia 3-2-1 e parte il cronometro.
 
-1. I blocchetti sono 10 operazioni a caso: primo numero da **2 a 9**
-   (le tabelline dalla 2 alla 9), secondo numero da **1 a 10**. Mai due
-   blocchetti uguali e mai la stessa operazione a fattori scambiati (non
-   compaiono insieme 3 × 4 e 4 × 3). Il risultato non si vede ("= ?").
+1. La tabellina (da **2 a 9**) viene estratta a caso a ogni partita e il titolo
+   lo dice ("Tabellina del 3"). **Ricomincia** e **Ripeti** rifanno la stessa
+   tabellina; **Nuova sfida** ne estrae un'altra (mai la stessa di seguito).
+   Il risultato non si vede ("= ?").
 2. Il bambino dice un'operazione, per esempio **"tre per quattro dodici"** o
    **"tre per quattro uguale dodici"**. Il blocchetto giusto si illumina di
    verde e mostra il risultato. Può dirle **in qualsiasi ordine**.
@@ -396,8 +398,7 @@ rovescia 3-2-1 e parte il cronometro.
    (verde = operazione completa e giusta, giallo = sta cominciando una).
 5. Quando tutti e 10 sono illuminati il cronometro si ferma e dopo circa un
    secondo si apre la solita finestra di fine partita (tempo, stelline,
-   Ripeti / Nuova / Esci). **Ricomincia** rifà gli stessi blocchetti,
-   **Nuova sfida** ne estrae di nuovi.
+   Ripeti / Nuova / Esci).
 6. Stelle in questo gioco: **3★ sotto 30 s, 2★ sotto 45 s, 1★ sotto 60 s**
    (`soglieStelle: [30, 45, 60]` in `js/games.js`).
 
@@ -407,6 +408,8 @@ tutto quello che il bambino ha detto (anche a cavallo di pause e riavvii del
 riconoscitore) e ogni blocchetto scatta una volta sola.
 
 **Scelte fatte in autonomia, da confermare o correggere:**
+- la tabellina **non si sceglie**: è estratta a caso (come nella richiesta
+  "una tabellina a caso"); se serve un selettore 2-9 va aggiunto.
 - il microfono è acceso per tutta la partita, già dal conto alla rovescia, ma
   quello che si dice durante il conto alla rovescia viene **scartato**; non c'è
   l'interruttore "🎤 Ascolto" (la voce è il modo di giocare).
