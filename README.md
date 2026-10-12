@@ -461,8 +461,12 @@ home con la scheda "Torre di parole", poi conto alla rovescia 3-2-1.
 
 Le 100 parole sono estratte dall'insieme di bisillabe e trisillabe (senza
 doppioni), quindi **nessuna parola compare due volte** nella stessa partita.
-La velocità di caduta è **sempre lenta e costante** (`TORRE_VEL_RIGHE_S` in
-`js/app.js`, sezione "GIOCO 9"): ~9 secondi per attraversare il campo vuoto.
+La caduta parte **lenta** (~9 secondi per attraversare il campo vuoto) e **ogni
+10 parole fatte esplodere accelera** di un gradino (compare "⚡ Più veloce!"):
+a 90 parole la velocità è circa doppia. Le costanti `TORRE_VEL_RIGHE_S`,
+`TORRE_VEL_INCREMENTO` e `TORRE_PAROLE_PER_LIVELLO` sono in `js/app.js`, sezione
+"GIOCO 9". Conta le parole fatte esplodere (non quelle cadute): se il
+bambino ne salta, la velocità non sale.
 Il codice dell'ascolto è `js/ascolto.js` (modo "selezione"), con l'elenco
 delle parole a schermo che si aggiorna man mano.
 
@@ -475,6 +479,8 @@ delle parole a schermo che si aggiorna man mano.
   è vuota.
 - se la finestra cambia dimensione (tablet ruotato) durante la partita, la torre
   si ridisegna senza perdere i blocchetti.
+- l'accelerazione è di +0.15 righe/s ogni 10 parole esplose (da 1.3 a 2.65 righe/s);
+  il passo e il criterio (esplose invece di cadute) sono facili da cambiare.
 - il test automatico usa un acceleratore di tempo (`window.__torreScala`, solo
   per i test: in uso normale vale 1) e un riconoscitore simulato: la resa con
   voci di bambini e il ritmo della caduta vanno verificati sul tablet.

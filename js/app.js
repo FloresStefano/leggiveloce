@@ -1908,7 +1908,9 @@
   const TORRE_LIMITE = 10; // blocchetti impilati che fanno finire la partita
   const TORRE_PAROLE_PER_STELLA = 10;
   const TORRE_RIGHE = TORRE_LIMITE + 2; // il campo e' alto quanto 12 blocchetti
-  const TORRE_VEL_RIGHE_S = 1.3; // caduta lenta: ~9 secondi per attraversare il campo vuoto
+  const TORRE_VEL_RIGHE_S = 1.3; // caduta lenta all'inizio: ~9 secondi per attraversare il campo vuoto
+  const TORRE_VEL_INCREMENTO = 0.15; // ogni 10 parole fatte esplodere la caduta accelera di tanto (righe al secondo)
+  const TORRE_PAROLE_PER_LIVELLO = 10; // a 90 parole la velocita' e' circa doppia (2.65 righe/s)
   const TORRE_ASSESTA_RIGHE_S = 9; // velocita' con cui la torre scende dopo un'esplosione
   const TORRE_ATTESA_SPAWN_S = 0.5; // pausa tra un blocchetto e il successivo
   const TORRE_ESPLOSIONE_MS = 600;
@@ -1978,7 +1980,7 @@
     s.accumulatoMs = 0;
     s.inCorso = false;
     s.inizioSegmento = null;
-    el.torreCampo.querySelectorAll(".torre-blocco, .torre-scheggia").forEach((n) => n.remove());
+    el.torreCampo.querySelectorAll(".torre-blocco, .torre-scheggia, .torre-toast").forEach((n) => n.remove());
     el.torreCampo.classList.remove("torre-campo--piena", "torre-campo--allerta");
     el.torreCronometro.textContent = formattaTempo(0);
     mostraSchermo("torre");
@@ -2093,10 +2095,24 @@
     s.cadente = b;
   }
 
+  // Velocita' di caduta (righe al secondo): sale di un gradino ogni 10 parole fatte esplodere.
+  function velocitaTorre() {
+    return TORRE_VEL_RIGHE_S + TORRE_VEL_INCREMENTO * Math.floor(stato.esplose / TORRE_PAROLE_PER_LIVELLO);
+  }
+
+  function annunciaPiuVeloceTorre() {
+    const t = document.createElement("div");
+    t.className = "torre-toast";
+    t.textContent = "⚡ Più veloce!";
+    el.torreCampo.appendChild(t);
+    setTimeout(() => t.remove(), 1400);
+  }
+
   function aggiornaContatoreTorre() {
     const s = stato;
     const stelle = Math.floor(s.esplose / TORRE_PAROLE_PER_STELLA);
     el.torreContatore.textContent = `${s.esplose}/${TORRE_PAROLE}` + (stelle ? ` · ⭐${stelle}` : "");
+    el.torreCampo.dataset.velocita = velocitaTorre().toFixed(2);
     const n = s.pila.length;
     el.torreCampo.classList.toggle("torre-campo--allerta", n >= TORRE_LIMITE - 2);
   }
@@ -2115,6 +2131,7 @@
     }
     s.esplose++;
     aggiornaContatoreTorre();
+    if (s.esplose % TORRE_PAROLE_PER_LIVELLO === 0 && s.esplose < TORRE_PAROLE) annunciaPiuVeloceTorre();
 
     // animazione: il blocchetto "scoppia" e lascia qualche scheggia
     const { H } = s.geo;
@@ -2209,7 +2226,7 @@
       const riposo = pavimento - (s.pila.length + 1) * H;
       const cima = s.pila.length ? s.pila[s.pila.length - 1].y : pavimento;
       const limiteY = Math.min(riposo, cima - H); // non attraversa un blocchetto che sta ancora scendendo
-      c.y = Math.min(c.y + TORRE_VEL_RIGHE_S * H * dt, limiteY);
+      c.y = Math.min(c.y + velocitaTorre() * H * dt, limiteY);
       posizionaBloccoTorre(c);
       if (c.y >= riposo - 0.5) {
         // atterrato

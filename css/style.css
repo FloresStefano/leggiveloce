@@ -1557,3 +1557,28 @@ button:disabled {
     height: clamp(360px, calc(100dvh - 320px), 780px);
   }
 }
+
+.torre-toast {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: #7a5cd6;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  animation: torre-toast 1.4s ease both;
+}
+
+@keyframes torre-toast {
+  0% { opacity: 0; transform: translate(-50%, -12px) scale(0.8); }
+  15% { opacity: 1; transform: translate(-50%, 0) scale(1.08); }
+  25% { transform: translate(-50%, 0) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, 0) scale(1); }
+}
