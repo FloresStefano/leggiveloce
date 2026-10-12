@@ -50,7 +50,8 @@ non fa nulla.
 
 Le soglie sono comuni a tutti i giochi (`SOGLIE_STELLE_SECONDI` in
 `js/giocatore.js`); un gioco può averne di sue con `soglieStelle: [a, b, c]`
-in `js/games.js`.
+in `js/games.js`. Eccezione: la **Torre di parole** non usa il tempo ma una
+stellina ogni 10 parole fatte esplodere (da 0 a 10).
 
 **Scelte fatte in autonomia, da confermare o correggere:**
 - la richiesta diceva "1 stellina sotto i 30 secondi, 0 oltre i 40": ho
@@ -434,16 +435,60 @@ riconoscitore) e ogni blocchetto scatta una volta sola.
   simulato; la resa con voci di bambini va verificata sul tablet.
 - sul telefono in verticale la pagina può scorrere di poco: è pensata per tablet.
 
+## 🧱 Gioco 9: "Torre di parole"
+
+Un gioco più attivo, ispirato a Tetris ma semplificato (si chiama "Torre di
+parole" per non usare il marchio Tetris). Dall'alto cade **un blocchetto alla
+volta**, lentamente, con scritta una parola bisillaba o trisillaba semplice
+(le stesse dei Giochi 1 e 3). I blocchetti si impilano in **una colonna
+traballante**: larghezza proporzionale alla lunghezza della parola, un piccolo
+scostamento a caso e una leggera inclinazione che ondeggia. Si parte dalla
+home con la scheda "Torre di parole", poi conto alla rovescia 3-2-1.
+
+1. Il bambino **dice ad alta voce una parola** che è a schermo (che stia
+   cadendo o sia già in pila): il blocchetto **esplode** e scompare, e i
+   blocchetti sopra **scendono** a riempire il vuoto.
+2. Si **perde** quando in pila ci sono **10 blocchetti** (c'è una linea
+   tratteggiata "limite" che lampeggia quando ne mancano 2). Si **vince** quando
+   sono cadute tutte le **100 parole** e la torre è stata svuotata.
+3. In alto: contatore delle parole fatte esplodere ("37/100 · ⭐3") e tempo
+   (il tempo si vede ma non conta per le stelline).
+4. **Stelline: una ogni 10 parole fatte esplodere**, quindi da 0 a 10, anche se
+   la partita finisce perdendo (47 parole = 4 stelline). Nel modale se ne
+   vedono solo le guadagnate. Con la vittoria (o 7+ stelle) partono i coriandoli.
+5. **Ricomincia** e **Ripeti la sfida** ripartono da capo con la stessa
+   sequenza di 100 parole; **Nuova sfida** estrae una nuova sequenza.
+
+Le 100 parole sono estratte dall'insieme di bisillabe e trisillabe (senza
+doppioni), quindi **nessuna parola compare due volte** nella stessa partita.
+La velocità di caduta è **sempre lenta e costante** (`TORRE_VEL_RIGHE_S` in
+`js/app.js`, sezione "GIOCO 9"): ~9 secondi per attraversare il campo vuoto.
+Il codice dell'ascolto è `js/ascolto.js` (modo "selezione"), con l'elenco
+delle parole a schermo che si aggiorna man mano.
+
+**Scelte fatte in autonomia, da confermare o correggere:**
+- **doppio tocco** (o doppio click) su un blocchetto lo fa esplodere come se
+  fosse stato detto: serve se il microfono non capisce una parola, non è
+  supportato o il permesso è negato (un tocco singolo non fa nulla).
+- non c'è l'interruttore "🎤 Ascolto": la voce è il modo di giocare.
+- dopo la 100ª parola non cadono altri blocchetti e si finisce quando la torre
+  è vuota.
+- se la finestra cambia dimensione (tablet ruotato) durante la partita, la torre
+  si ridisegna senza perdere i blocchetti.
+- il test automatico usa un acceleratore di tempo (`window.__torreScala`, solo
+  per i test: in uso normale vale 1) e un riconoscitore simulato: la resa con
+  voci di bambini e il ritmo della caduta vanno verificati sul tablet.
+
 Altri giochi compariranno in home come schede "Prossimamente" (disattive)
 finché non verranno definiti e attivati.
 
 ## 🗂️ Struttura del progetto
 
 ```
-index.html                             home, giochi 1-8, finestra di fine partita
+index.html                             home, giochi 1-9, finestra di fine partita
 css/style.css                          stile grafico, responsive, per tablet
 js/games.js                            elenco dei giochi (id, tipo, attivo/non attivo)
-js/ascolto.js                          ascolto a voce opzionale (Giochi 1, 3, 4, 5, 6)
+js/ascolto.js                          ascolto a voce (Giochi 1, 3, 4, 5, 6 e 9)
 js/ascolto-frase.js                    ascolto di frasi intere "sette più cinque uguale dodici" (Giochi 7 e 8)
 js/giocatore.js                        giocatore di sessione, avatar, stelline
 js/fine-partita.js                     finestra di fine partita + coriandoli
@@ -471,7 +516,7 @@ Nessun build step: file statici, pubblicati gratis con **GitHub Pages**.
    `<script src="js/games/<id-gioco>.js">` in `index.html` prima di
    `js/app.js`.
 2. Aggiungere una voce in `js/games.js` con `attivo: true` e un `tipo`
-   (`"lettura"`, `"abbinamento"`, `"frase"`, `"fette"`, `"lettere"`, `"riporto"`, `"tabelline"`, o uno
+   (`"lettura"`, `"abbinamento"`, `"frase"`, `"fette"`, `"lettere"`, `"riporto"`, `"tabelline"`, `"torre"`, o uno
    nuovo se la meccanica è diversa).
 3. Collegare l'id del gioco al suo elenco parole/frasi in `GAME_DATA`
    dentro `js/app.js`.

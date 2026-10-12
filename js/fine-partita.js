@@ -3,7 +3,9 @@
  * finita con il tempo, le stelline guadagnate e tre sole scelte:
  * Ripeti la sfida, Nuova sfida, Esci. Con 3 stelline partono i coriandoli.
  *
- *   FinePartita.mostra({ gioco, tempo, stelle, soglie, ripeti, nuova, esci })
+ *   FinePartita.mostra({ gioco, tempo, stelle, soglie, ripeti, nuova, esci,
+ *                        titolo, messaggio, legenda, coriandoli })   (gli ultimi quattro sono facoltativi:
+ *                        i giochi a tempo usano i testi standard; Torre di parole ha stelline fino a 10)
  *   FinePartita.chiudi()
  *   FinePartita.aperta()
  *
@@ -130,6 +132,7 @@
       img.draggable = false;
       box.appendChild(img);
     }
+    box.classList.toggle("modale__stelle--molte", n > 3); // oltre 3 stelle: piu' piccole, anche su due righe
     box.setAttribute("aria-label", n === 1 ? "1 stellina" : n + " stelline");
   }
 
@@ -148,25 +151,26 @@
       aperta = true;
       azioni = { ripeti: o.ripeti, nuova: o.nuova, esci: o.esci };
 
-      $("modale-titolo").textContent = TITOLI[o.stelle] || TITOLI[0];
+      $("modale-titolo").textContent = o.titolo || TITOLI[o.stelle] || TITOLI[0];
       $("modale-gioco").textContent = o.gioco || "";
       $("modale-tempo").textContent = formattaTempo(o.tempo);
       disegnaStelle(o.stelle);
-      $("modale-messaggio").textContent =
-        o.stelle === 0
+      $("modale-messaggio").textContent = o.messaggio ||
+        (o.stelle === 0
           ? "Nessuna stellina stavolta: riprova, puoi farcela!"
           : o.stelle === 1
           ? "Hai guadagnato 1 stellina!"
-          : "Hai guadagnato " + o.stelle + " stelline!";
-      $("modale-legenda").textContent = legenda(o.soglie);
+          : "Hai guadagnato " + o.stelle + " stelline!");
+      $("modale-legenda").textContent = o.legenda || legenda(o.soglie);
 
-      modale.classList.toggle("modale--tre-stelle", o.stelle === 3);
+      const festa = typeof o.coriandoli === "boolean" ? o.coriandoli : o.stelle === 3;
+      modale.classList.toggle("modale--tre-stelle", festa);
       modale.hidden = false;
       const primo = $("modale-nuova");
       if (primo) primo.focus({ preventScroll: true });
 
       fermaCoriandoli();
-      if (o.stelle === 3) timerAvvio = setTimeout(lanciaCoriandoli, 900); // quando la 3a stella e' comparsa
+      if (festa) timerAvvio = setTimeout(lanciaCoriandoli, 900); // quando l'ultima stella e' comparsa
     },
 
     chiudi() {

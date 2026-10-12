@@ -20,6 +20,10 @@
  * - "tabelline": una tabellina intera (da 2 a 9) per partita: 10 operazioni in ordine, da dire
  *   ad alta voce con il risultato ("tre per quattro dodici"); ogni frase
  *   giusta evidenzia il suo blocchetto; non usa nessun file di parole (Gioco 8)
+ * - "torre": Torre di parole (Gioco 9): 100 parole (bisillabe e trisillabe dei Giochi 1 e 3)
+ *   cadono una alla volta e si impilano in una colonna; dette ad alta voce
+ *   esplodono (la torre si assesta). Si perde con 10 blocchetti impilati.
+ *   Stelline: una ogni 10 parole fatte esplodere (da 0 a 10), non dal tempo.
  *
  * "ascolto: true" attiva l'ascolto a voce opzionale di js/ascolto.js (giochi
  * di tipo "lettura", "frase", "fette" e "lettere"): interruttore "🎤 Ascolto" nella
@@ -114,6 +118,15 @@ const GAMES = [
     tipo: "tabelline",
     attivo: true,
     soglieStelle: [30, 45, 60],
+  },
+  {
+    id: "torre-di-parole",
+    titolo: "Torre di parole",
+    emoji: "🧱",
+    colore: "#7a5cd6",
+    descrizione: "Le parole cadono e si impilano: dille ad alta voce per farle esplodere, prima che la torre arrivi in alto!",
+    tipo: "torre",
+    attivo: true,
   },
   {
     id: "prossimo-1",

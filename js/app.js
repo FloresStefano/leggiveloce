@@ -37,6 +37,7 @@
     lettere: $("#schermo-lettere"),
     riporto: $("#schermo-riporto"),
     tabelline: $("#schermo-tabelline"),
+    torre: $("#schermo-torre"),
   };
 
   const el = {
@@ -117,6 +118,16 @@
     tabellineBtnRicomincia: $("#tabelline-btn-ricomincia"),
     tabellineBtnNuovaSfida: $("#tabelline-btn-nuova-sfida"),
     tabellineBtnEsci: $("#tabelline-btn-esci"),
+    // gioco 9: torre di parole
+    torreCampo: $("#torre-campo"),
+    torreLimite: $("#torre-limite"),
+    torreContatore: $("#torre-contatore"),
+    torreCronometro: $("#torre-cronometro"),
+    torreCountdownOverlay: $("#torre-countdown-overlay"),
+    torreCountdownTesto: $("#torre-countdown-testo"),
+    torreBtnRicomincia: $("#torre-btn-ricomincia"),
+    torreBtnNuovaSfida: $("#torre-btn-nuova-sfida"),
+    torreBtnEsci: $("#torre-btn-esci"),
     riportoCountdownOverlay: $("#riporto-countdown-overlay"),
     riportoCountdownTesto: $("#riporto-countdown-testo"),
     riportoBtnRicomincia: $("#riporto-btn-ricomincia"),
@@ -246,6 +257,7 @@
     else if (gioco.tipo === "lettere") avviaLettereSpeculari(gameId);
     else if (gioco.tipo === "riporto") avviaRiporto(gameId);
     else if (gioco.tipo === "tabelline") avviaTabelline(gameId);
+    else if (gioco.tipo === "torre") avviaTorre(gameId);
     else avviaLettura(gameId);
   }
 
@@ -259,7 +271,7 @@
 
   // Tipi di partita che possono avere l'ascolto a voce (js/ascolto.js).
   function usaAscolto(tipo) {
-    return tipo === "lettura" || tipo === "fette" || tipo === "lettere";
+    return tipo === "lettura" || tipo === "fette" || tipo === "lettere" || tipo === "torre";
   }
 
   // Chiave per confrontare le parole: niente maiuscole ne' accenti, cosi' due
@@ -1885,10 +1897,361 @@
     el.tabellineScelta.hidden = false;
   }
 
+  // ---------- GIOCO 9: Torre di parole ----------
+
+  // 100 parole (bisillabe e trisillabe dei Giochi 1 e 3) cadono una alla volta e
+  // si impilano in una colonna. Dette ad alta voce (ascolto.js, modo "selezione"),
+  // esplodono e i blocchetti sopra scendono a riempire il vuoto. Con 10 blocchetti
+  // impilati la partita e' persa; si vince quando sono cadute tutte le 100 parole
+  // e la torre e' vuota. Stelline: una ogni 10 parole fatte esplodere.
+  const TORRE_PAROLE = 100;
+  const TORRE_LIMITE = 10; // blocchetti impilati che fanno finire la partita
+  const TORRE_PAROLE_PER_STELLA = 10;
+  const TORRE_RIGHE = TORRE_LIMITE + 2; // il campo e' alto quanto 12 blocchetti
+  const TORRE_VEL_RIGHE_S = 1.3; // caduta lenta: ~9 secondi per attraversare il campo vuoto
+  const TORRE_ASSESTA_RIGHE_S = 9; // velocita' con cui la torre scende dopo un'esplosione
+  const TORRE_ATTESA_SPAWN_S = 0.5; // pausa tra un blocchetto e il successivo
+  const TORRE_ESPLOSIONE_MS = 600;
+  const TORRE_COLORI = ["#ffd9a8", "#cfe8ff", "#d6f2c6", "#ffcfe0", "#e5d7ff", "#fff0a8"];
+  const DOPPIO_TORRE_MS = 450;
+
+  let torreRaf = null;
+  let torreUltimoT = 0;
+  let torreUltimoTocco = { id: -1, t: 0 };
+
+  function impostaBottoniTorre(abilitati) {
+    el.torreBtnRicomincia.disabled = !abilitati;
+    el.torreBtnNuovaSfida.disabled = !abilitati;
+    // torre-btn-esci resta sempre cliccabile
+  }
+
+  function sequenzaTorre() {
+    const viste = new Set();
+    const pool = [];
+    PAROLE_BISILLABE_PIANE.concat(PAROLE_TRISILLABE_PIANE).forEach((p) => {
+      const k = chiaveParola(p.parola);
+      if (viste.has(k)) return;
+      viste.add(k);
+      pool.push(p.parola);
+    });
+    return mescola(pool).slice(0, TORRE_PAROLE);
+  }
+
+  function avviaTorre(gameId) {
+    const gioco = GAMES.find((g) => g.id === gameId);
+    if (!gioco || !gioco.attivo) return;
+    fermaCicloTorre();
+    if (window.AscoltoFrase) window.AscoltoFrase.ferma();
+    clearInterval(timerIntervalId);
+    stato = {
+      gameId,
+      tipo: "torre",
+      sequenza: sequenzaTorre(),
+      blocchi: [], // tutti quelli a schermo (quello che cade + la pila): e' l'elenco che ascolta la voce
+      pila: [], // quelli atterrati, dal basso in alto
+      cadente: null,
+      spawnati: 0,
+      esplose: 0,
+      attesa: 0,
+      fine: false,
+      vittoria: false,
+      accumulatoMs: 0,
+      inCorso: false,
+      inizioSegmento: null,
+      cronometroEl: el.torreCronometro,
+    };
+    iniziaPartitaTorre();
+  }
+
+  // Parte (o riparte) la partita con la sequenza di parole di "stato".
+  function iniziaPartitaTorre() {
+    const s = stato;
+    fermaCicloTorre();
+    s.blocchi.length = 0;
+    s.pila = [];
+    s.cadente = null;
+    s.spawnati = 0;
+    s.esplose = 0;
+    s.attesa = 0;
+    s.fine = false;
+    s.vittoria = false;
+    s.accumulatoMs = 0;
+    s.inCorso = false;
+    s.inizioSegmento = null;
+    el.torreCampo.querySelectorAll(".torre-blocco, .torre-scheggia").forEach((n) => n.remove());
+    el.torreCampo.classList.remove("torre-campo--piena", "torre-campo--allerta");
+    el.torreCronometro.textContent = formattaTempo(0);
+    mostraSchermo("torre");
+    calcolaGeometriaTorre();
+    aggiornaContatoreTorre();
+    apriAscoltoTorre();
+    eseguiCountdown(el.torreCampo, el.torreCountdownOverlay, el.torreCountdownTesto, impostaBottoniTorre, () => {
+      avviaCronometro();
+      avviaCicloTorre();
+    });
+  }
+
+  function ricominciaTorre() {
+    if (!stato || stato.tipo !== "torre") return;
+    clearInterval(timerIntervalId);
+    if (window.Ascolto) window.Ascolto.chiudi();
+    iniziaPartitaTorre();
+  }
+
+  function nuovaSfidaTorre() {
+    if (!stato) return;
+    avviaTorre(stato.gameId);
+  }
+
+  function apriAscoltoTorre() {
+    const partita = stato;
+    if (!window.Ascolto) return;
+    window.Ascolto.apri({
+      abilitato: true,
+      schermo: "torre",
+      modo: "selezione",
+      parole: partita.blocchi, // elenco "vivo": si aggiorna man mano che le parole compaiono e scompaiono
+      inCorso: () => stato === partita && partita.inCorso && !partita.fine,
+      inPausa: () => !(stato === partita && partita.inCorso),
+      alTrovata: (i) => {
+        if (stato !== partita || partita.fine) return;
+        const b = partita.blocchi[i];
+        if (b) esplodiBloccoTorre(b);
+      },
+    });
+  }
+
+  // ----- Geometria (si ricalcola se cambia la finestra) -----
+
+  function calcolaGeometriaTorre() {
+    const s = stato;
+    const campo = el.torreCampo;
+    const alt = campo.clientHeight || 480;
+    const larg = campo.clientWidth || 320;
+    const vecchia = s.geo ? s.geo.H : 0;
+    const H = Math.max(30, Math.min(60, Math.floor(alt / TORRE_RIGHE)));
+    s.geo = { H, larg, alt, pavimento: alt }; // pavimento: y del bordo superiore del suolo
+    el.torreLimite.style.top = alt - TORRE_LIMITE * H + "px";
+    campo.style.setProperty("--torre-h", H + "px");
+    if (vecchia && vecchia !== H) {
+      // la finestra e' cambiata durante la partita: si riscalano le posizioni
+      const k = H / vecchia;
+      s.blocchi.forEach((b) => { b.y *= k; });
+    }
+    s.blocchi.forEach((b) => dimensionaBloccoTorre(b));
+  }
+
+  function ricalcolaTorre() {
+    if (!stato || stato.tipo !== "torre") return;
+    calcolaGeometriaTorre();
+    ridisegnaTorre();
+  }
+
+  function dimensionaBloccoTorre(b) {
+    const { H, larg } = stato.geo;
+    b.w = Math.min(larg - 8, Math.round(H * (1.15 + 0.34 * b.parola.length)));
+    b.el.style.width = b.w + "px";
+    b.el.style.height = H + "px";
+    b.el.style.setProperty("--fs", Math.round(H * 0.5) + "px");
+    b.x = Math.round((larg - b.w) / 2 + b.dx * H);
+    b.x = Math.max(2, Math.min(larg - b.w - 2, b.x));
+  }
+
+  function posizionaBloccoTorre(b) {
+    b.el.style.transform = `translate3d(${b.x}px, ${b.y.toFixed(1)}px, 0)`;
+  }
+
+  function ridisegnaTorre() {
+    stato.blocchi.forEach(posizionaBloccoTorre);
+  }
+
+  // ----- Blocchetti -----
+
+  function nuovoBloccoTorre() {
+    const s = stato;
+    const parola = s.sequenza[s.spawnati];
+    const n = s.spawnati;
+    s.spawnati++;
+    const blocco = document.createElement("div");
+    blocco.className = "torre-blocco torre-blocco--cade";
+    blocco.dataset.id = String(n);
+    blocco.setAttribute("aria-label", parola);
+    const corpo = document.createElement("div");
+    corpo.className = "torre-blocco__corpo";
+    corpo.textContent = parola;
+    corpo.style.setProperty("--col", TORRE_COLORI[n % TORRE_COLORI.length]);
+    blocco.appendChild(corpo);
+    const rot = (Math.random() - 0.5) * 3; // inclinazione a riposo, tra -1.5 e +1.5 gradi
+    corpo.style.setProperty("--rot", rot.toFixed(2) + "deg");
+    corpo.style.setProperty("--ritardo", (-Math.random() * 2.6).toFixed(2) + "s");
+    const b = { id: n, parola, el: blocco, corpo, dx: (Math.random() - 0.5) * 0.7, y: 0, x: 0, w: 0 };
+    el.torreCampo.appendChild(blocco);
+    dimensionaBloccoTorre(b);
+    b.y = -stato.geo.H; // parte appena sopra il bordo alto
+    posizionaBloccoTorre(b);
+    s.blocchi.push(b);
+    s.cadente = b;
+  }
+
+  function aggiornaContatoreTorre() {
+    const s = stato;
+    const stelle = Math.floor(s.esplose / TORRE_PAROLE_PER_STELLA);
+    el.torreContatore.textContent = `${s.esplose}/${TORRE_PAROLE}` + (stelle ? ` · ⭐${stelle}` : "");
+    const n = s.pila.length;
+    el.torreCampo.classList.toggle("torre-campo--allerta", n >= TORRE_LIMITE - 2);
+  }
+
+  function esplodiBloccoTorre(b) {
+    const s = stato;
+    if (!s || s.fine) return;
+    const i = s.blocchi.indexOf(b);
+    if (i < 0) return;
+    s.blocchi.splice(i, 1);
+    const j = s.pila.indexOf(b);
+    if (j >= 0) s.pila.splice(j, 1);
+    if (s.cadente === b) {
+      s.cadente = null;
+      s.attesa = TORRE_ATTESA_SPAWN_S;
+    }
+    s.esplose++;
+    aggiornaContatoreTorre();
+
+    // animazione: il blocchetto "scoppia" e lascia qualche scheggia
+    const { H } = s.geo;
+    b.el.classList.add("torre-blocco--esplode");
+    b.el.classList.remove("torre-blocco--cade");
+    for (let k = 0; k < 8; k++) {
+      const sc = document.createElement("span");
+      sc.className = "torre-scheggia";
+      const ang = (Math.PI * 2 * k) / 8 + Math.random() * 0.5;
+      const dist = H * (0.9 + Math.random() * 0.9);
+      sc.style.setProperty("--dx", Math.round(Math.cos(ang) * dist) + "px");
+      sc.style.setProperty("--dy", Math.round(Math.sin(ang) * dist) + "px");
+      sc.style.setProperty("--col", b.corpo.style.getPropertyValue("--col"));
+      sc.style.left = b.x + b.w / 2 + "px";
+      sc.style.top = b.y + H / 2 + "px";
+      el.torreCampo.appendChild(sc);
+      setTimeout(() => sc.remove(), TORRE_ESPLOSIONE_MS);
+    }
+    setTimeout(() => b.el.remove(), TORRE_ESPLOSIONE_MS);
+
+    controllaFineTorre();
+  }
+
+  // Vittoria: cadute tutte le parole e torre vuota.
+  function controllaFineTorre() {
+    const s = stato;
+    if (s.fine) return;
+    if (s.spawnati >= TORRE_PAROLE && s.blocchi.length === 0) terminaTorre(true);
+  }
+
+  function terminaTorre(vittoria) {
+    const s = stato;
+    if (!s || s.fine) return;
+    s.fine = true;
+    s.vittoria = vittoria;
+    fermaCicloTorre();
+    el.torreCampo.classList.toggle("torre-campo--piena", !vittoria);
+    el.torreCampo.classList.remove("torre-campo--allerta");
+    pausaCronometro(); // ferma anche il microfono
+    mostraModaleFineTra(vittoria ? 900 : 1500);
+  }
+
+  function modaleTorre(stelle) {
+    const s = stato;
+    const n = s.esplose;
+    const parole = n === 1 ? "1 parola" : `${n} parole`;
+    return {
+      titolo: s.vittoria ? "Torre finita, fantastico!" : stelle > 0 ? "La torre è piena!" : "Torre piena!",
+      messaggio:
+        stelle === 0
+          ? `Hai fatto esplodere ${parole}: servono almeno ${TORRE_PAROLE_PER_STELLA} per una stellina. Riprova!`
+          : `Hai fatto esplodere ${parole}: ${stelle === 1 ? "1 stellina" : stelle + " stelline"}!`,
+      legenda: `Una stellina ogni ${TORRE_PAROLE_PER_STELLA} parole fatte esplodere (fino a ${TORRE_PAROLE / TORRE_PAROLE_PER_STELLA}). Con ${TORRE_LIMITE} blocchetti impilati la partita finisce.`,
+      coriandoli: s.vittoria || stelle >= 7,
+    };
+  }
+
+  // ----- Ciclo di animazione -----
+
+  function avviaCicloTorre() {
+    fermaCicloTorre();
+    torreUltimoT = 0;
+    torreRaf = requestAnimationFrame(passoTorre);
+  }
+
+  function fermaCicloTorre() {
+    if (torreRaf) cancelAnimationFrame(torreRaf);
+    torreRaf = null;
+  }
+
+  function passoTorre(t) {
+    const s = stato;
+    if (!s || s.tipo !== "torre" || s.fine) { torreRaf = null; return; }
+    const scala = Number(window.__torreScala) > 0 ? Number(window.__torreScala) : 1; // solo per i test
+    const dt = torreUltimoT ? Math.min(0.05, (t - torreUltimoT) / 1000) * scala : 0;
+    torreUltimoT = t;
+    torreRaf = requestAnimationFrame(passoTorre);
+    if (!s.inCorso || dt <= 0) return;
+
+    const { H, pavimento } = s.geo;
+
+    // la pila scende fino al suo posto (dopo un'esplosione sotto di loro)
+    s.pila.forEach((b, i) => {
+      const meta = pavimento - (i + 1) * H;
+      if (b.y < meta) b.y = Math.min(meta, b.y + TORRE_ASSESTA_RIGHE_S * H * dt);
+      else b.y = meta;
+      posizionaBloccoTorre(b);
+    });
+
+    const c = s.cadente;
+    if (c) {
+      const riposo = pavimento - (s.pila.length + 1) * H;
+      const cima = s.pila.length ? s.pila[s.pila.length - 1].y : pavimento;
+      const limiteY = Math.min(riposo, cima - H); // non attraversa un blocchetto che sta ancora scendendo
+      c.y = Math.min(c.y + TORRE_VEL_RIGHE_S * H * dt, limiteY);
+      posizionaBloccoTorre(c);
+      if (c.y >= riposo - 0.5) {
+        // atterrato
+        c.y = riposo;
+        posizionaBloccoTorre(c);
+        c.el.classList.remove("torre-blocco--cade");
+        c.el.classList.add("torre-blocco--pila");
+        s.pila.push(c);
+        s.cadente = null;
+        s.attesa = TORRE_ATTESA_SPAWN_S;
+        aggiornaContatoreTorre();
+        if (s.pila.length >= TORRE_LIMITE) terminaTorre(false);
+      }
+    } else if (s.spawnati < TORRE_PAROLE) {
+      s.attesa -= dt;
+      if (s.attesa <= 0) nuovoBloccoTorre();
+    }
+  }
+
+  // ----- Tocchi: doppio tocco su un blocchetto = come se fosse stato detto -----
+
+  function toccoTorre(e) {
+    const s = stato;
+    if (!s || s.tipo !== "torre" || !s.inCorso || s.fine) return;
+    const nodo = e.target.closest(".torre-blocco");
+    if (!nodo || nodo.classList.contains("torre-blocco--esplode")) return;
+    const id = Number(nodo.dataset.id);
+    const ora = performance.now();
+    if (torreUltimoTocco.id === id && ora - torreUltimoTocco.t <= DOPPIO_TORRE_MS) {
+      torreUltimoTocco = { id: -1, t: 0 };
+      const b = s.blocchi.find((x) => x.id === id);
+      if (b) esplodiBloccoTorre(b);
+    } else {
+      torreUltimoTocco = { id, t: ora };
+    }
+  }
+
   // ---------- Uscita dal gioco ----------
 
   function esciDalGioco() {
     countdownCorrente++; // ferma un eventuale conto alla rovescia in corso
+    fermaCicloTorre();
     clearInterval(timerIntervalId);
     annullaDragRiporto();
     if (window.AscoltoFrase) window.AscoltoFrase.ferma();
@@ -1917,10 +2280,13 @@
     const gioco = GAMES.find((g) => g.id === stato.gameId);
     const soglie = (gioco && gioco.soglieStelle) || window.Giocatore.SOGLIE_STELLE_SECONDI;
     const tempoFinale = tempoTrascorsoMs();
-    const stelle = window.Giocatore.stelleDaTempo(tempoFinale, soglie);
+    // Torre di parole: le stelline non dipendono dal tempo ma dalle parole fatte esplodere
+    const torre = stato.tipo === "torre";
+    const stelle = torre ? Math.floor(stato.esplose / TORRE_PAROLE_PER_STELLA) : window.Giocatore.stelleDaTempo(tempoFinale, soglie);
     window.Giocatore.aggiungiStelle(stato.gameId, stelle);
 
-    window.FinePartita.mostra({
+    const extra = torre ? modaleTorre(stelle) : {};
+    window.FinePartita.mostra(Object.assign({
       gioco: gioco ? `${gioco.emoji} ${gioco.titolo}` : "",
       tempo: tempoFinale,
       stelle,
@@ -1928,7 +2294,7 @@
       ripeti: ricominciaDaRisultati,
       nuova: nuovaSfidaDaRisultati,
       esci: esciDalGioco,
-    });
+    }, extra));
   }
 
   function ricominciaDaRisultati() {
@@ -1938,6 +2304,7 @@
     else if (stato.tipo === "lettere") ricominciaLettereSpeculari();
     else if (stato.tipo === "riporto") ricominciaRiporto();
     else if (stato.tipo === "tabelline") ricominciaTabelline();
+    else if (stato.tipo === "torre") ricominciaTorre();
     else ricominciaAbbinamento();
   }
 
@@ -1948,6 +2315,7 @@
     else if (stato.tipo === "lettere") nuovaSfidaLettereSpeculari();
     else if (stato.tipo === "riporto") nuovaSfidaRiporto();
     else if (stato.tipo === "tabelline") nuovaSfidaTabelline();
+    else if (stato.tipo === "torre") nuovaSfidaTorre();
     else nuovaSfidaAbbinamento();
   }
 
@@ -1985,6 +2353,13 @@
     el.tabellineBtnEsci.addEventListener("click", esciDalGioco);
     el.tabellineGriglia.addEventListener("click", clickTabelline);
     el.tabellineGriglia.addEventListener("click", toccoTabelline);
+
+    // gioco 9: torre di parole
+    el.torreBtnRicomincia.addEventListener("click", ricominciaTorre);
+    el.torreBtnNuovaSfida.addEventListener("click", nuovaSfidaTorre);
+    el.torreBtnEsci.addEventListener("click", esciDalGioco);
+    el.torreCampo.addEventListener("click", toccoTorre);
+    window.addEventListener("resize", ricalcolaTorre);
 
     // gioco 7: somme col riporto
     costruisciNumeriRiporto();

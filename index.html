@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Lexend:wght@400;600;700&display=swap" rel="stylesheet" />
 
-<link rel="stylesheet" href="css/style.css?v=20261017" />
+<link rel="stylesheet" href="css/style.css?v=20261018" />
 </head>
 <body>
 
@@ -185,6 +185,41 @@
     </div>
   </section>
 
+  <!-- SCHERMATA GIOCO 9: Torre di parole -->
+  <section id="schermo-torre" class="screen screen--torre">
+    <div class="gioco">
+      <div class="gioco__header gioco__header--compatto">
+        <div class="titolo-gruppo">
+          <div class="gioco__titolo">🧱 Torre di parole</div>
+        </div>
+        <div class="torre-indicatori">
+          <div id="torre-contatore" class="torre-contatore" aria-live="off">0/100</div>
+          <div id="torre-cronometro" class="cronometro">0.0s</div>
+        </div>
+      </div>
+
+      <p class="abbina-istruzioni">Leggi ad alta voce le parole che cadono: ogni parola detta esplode (o fai doppio tocco sul blocchetto). Non lasciare che la torre arrivi in cima!</p>
+
+      <div class="gioco-area torre-area">
+        <div id="torre-campo" class="torre-campo" role="group" aria-label="Torre di parole">
+          <div id="torre-limite" class="torre-limite" aria-hidden="true"></div>
+        </div>
+
+        <div id="torre-countdown-overlay" class="countdown-overlay">
+          <span id="torre-countdown-testo" class="countdown-testo">3</span>
+        </div>
+      </div>
+
+      <span id="torre-ascolto-stato" class="ascolto-stato" aria-live="polite" hidden></span>
+
+      <div class="gioco__azioni">
+        <button id="torre-btn-ricomincia" class="btn-secondario">🔁 Ricomincia</button>
+        <button id="torre-btn-nuova-sfida" class="btn-secondario">🎲 Nuova sfida</button>
+        <button id="torre-btn-esci" class="btn-secondario">🏠 Esci</button>
+      </div>
+    </div>
+  </section>
+
   <!-- SCHERMATA GIOCO 6: Lettere speculari -->
   <section id="schermo-lettere" class="screen">
     <div class="gioco">
@@ -325,17 +360,17 @@
 <canvas id="coriandoli" class="coriandoli" hidden aria-hidden="true"></canvas>
 
 
-<script src="js/games/bisillabe-piane-semplici.js?v=20261017"></script>
-<script src="js/games/trisillabe-piane.js?v=20261017"></script>
-<script src="js/games/frasi.js?v=20261017"></script>
-<script src="js/games/parola-a-fette.js?v=20261017"></script>
-<script src="js/games/lettere-speculari.js?v=20261017"></script>
-<script src="js/vendor/avataaars.bundle.js?v=20261017"></script>
-<script src="js/giocatore.js?v=20261017"></script>
-<script src="js/games.js?v=20261017"></script>
-<script src="js/ascolto.js?v=20261017"></script>
-<script src="js/ascolto-frase.js?v=20261017"></script>
-<script src="js/fine-partita.js?v=20261017"></script>
-<script src="js/app.js?v=20261017"></script>
+<script src="js/games/bisillabe-piane-semplici.js?v=20261018"></script>
+<script src="js/games/trisillabe-piane.js?v=20261018"></script>
+<script src="js/games/frasi.js?v=20261018"></script>
+<script src="js/games/parola-a-fette.js?v=20261018"></script>
+<script src="js/games/lettere-speculari.js?v=20261018"></script>
+<script src="js/vendor/avataaars.bundle.js?v=20261018"></script>
+<script src="js/giocatore.js?v=20261018"></script>
+<script src="js/games.js?v=20261018"></script>
+<script src="js/ascolto.js?v=20261018"></script>
+<script src="js/ascolto-frase.js?v=20261018"></script>
+<script src="js/fine-partita.js?v=20261018"></script>
+<script src="js/app.js?v=20261018"></script>
 </body>
 </html>

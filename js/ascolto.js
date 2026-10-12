@@ -20,7 +20,7 @@
  *   nel gioco equivale a premere FINE. Se una parola compare piu' volte nella
  *   stessa frase ("il", "la"...) va detta altrettante volte.
  *
- * - "selezione" (Gioco 5 Parola a fette, Gioco 6 Lettere speculari): ogni parola riconosciuta tra quelle
+ * - "selezione" (Gioco 5 Parola a fette, Gioco 6 Lettere speculari, Gioco 9 Torre di parole): ogni parola riconosciuta tra quelle
  *   della griglia equivale a toccarla a mano: chiama cfg.alTrovata(indice) e
  *   sta al gioco decidere se e' giusta o sbagliata. Niente tocchi speciali.
  *
@@ -46,6 +46,8 @@
     gioco: { interr: "ascolto-interruttore", inp: "ascolto-opt", stato: "ascolto-stato" },
     fette: { interr: "fette-ascolto-interruttore", inp: "fette-ascolto-opt", stato: "fette-ascolto-stato" },
     lettere: { interr: "lettere-ascolto-interruttore", inp: "lettere-ascolto-opt", stato: "lettere-ascolto-stato" },
+    // Torre di parole: niente interruttore (la voce e' il modo di giocare), solo il messaggio di stato
+    torre: { interr: "torre-ascolto-interruttore", inp: "torre-ascolto-opt", stato: "torre-ascolto-stato" },
   };
 
   let slot = SLOT.gioco;

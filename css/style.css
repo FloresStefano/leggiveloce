@@ -1362,3 +1362,198 @@ button:disabled {
 .tabelline-griglia .parola-tile { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
 .tabelline-griglia .parola-tile--suggerito { box-shadow: 0 0 0 3px #f2a33a, var(--shadow); }
 .tabelline-griglia .parola-tile--suggerito .tabellina-risultato { color: #c46a00; opacity: 1; }
+
+/* Molte stelline nel modale (Torre di parole: fino a 10): piu' piccole, a capo se serve */
+.modale__stelle--molte { flex-wrap: wrap; gap: 4px clamp(2px, 1vw, 8px); }
+.modale__stelle--molte .modale__stella { width: clamp(46px, 11vw, 66px); height: clamp(46px, 11vw, 66px); }
+
+/* ---------- GIOCO 9: Torre di parole ---------- */
+
+.screen--torre {
+  padding: clamp(10px, 1.6vw, 20px) clamp(12px, 2vw, 24px);
+}
+
+.screen--torre .cronometro {
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  padding: 4px 16px;
+}
+
+.torre-indicatori {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.torre-contatore {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  border-radius: 999px;
+  padding: 4px 22px;
+  color: var(--accent-dark);
+}
+
+.screen--torre .gioco__azioni {
+  padding-bottom: 0;
+  gap: 10px;
+}
+
+.screen--torre .gioco__azioni button {
+  min-height: 46px;
+  padding: 10px 22px;
+}
+
+.screen--torre .ascolto-stato {
+  align-self: center;
+  margin: 0 0 6px;
+}
+
+.torre-area {
+  flex: 0 0 auto;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.torre-campo {
+  position: relative;
+  flex: 0 1 640px;
+  width: min(100%, 640px);
+  height: clamp(380px, calc(100vh - 280px), 780px);
+  height: clamp(380px, calc(100dvh - 280px), 780px);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border-bottom: 12px solid #cdbfae; /* il suolo */
+  background: linear-gradient(180deg, #eef6ff 0%, #fff7ea 100%);
+  box-shadow: var(--shadow), inset 0 0 0 2px rgba(255, 255, 255, 0.7);
+  transition: filter 0.2s ease;
+  touch-action: manipulation;
+}
+
+.torre-campo.sfocato {
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+/* linea del limite: con 10 blocchetti impilati (fino a qui) la partita finisce */
+.torre-limite {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 3px dashed rgba(209, 73, 91, 0.45);
+  pointer-events: none;
+}
+
+.torre-limite::after {
+  content: "limite";
+  position: absolute;
+  right: 8px;
+  top: -22px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(209, 73, 91, 0.75);
+}
+
+.torre-campo--allerta .torre-limite { border-top-color: rgba(209, 73, 91, 0.95); animation: torre-lampeggia 0.9s ease-in-out infinite alternate; }
+.torre-campo--piena { animation: torre-trema 0.5s ease 2; box-shadow: var(--shadow), inset 0 0 0 4px rgba(209, 73, 91, 0.7); }
+
+.torre-blocco {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.torre-blocco__corpo {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: var(--col, #ffd9a8);
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.12), 0 3px 8px rgba(51, 48, 46, 0.22);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs, 22px);
+  line-height: 1;
+  color: #2f2a27;
+  white-space: nowrap;
+}
+
+.torre-blocco--cade .torre-blocco__corpo {
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.12), 0 6px 14px rgba(122, 92, 214, 0.35);
+}
+
+.torre-blocco--pila .torre-blocco__corpo {
+  transform: rotate(var(--rot, 0deg));
+  animation: torre-ondeggia 2.6s ease-in-out infinite alternate;
+  animation-delay: var(--ritardo, 0s);
+}
+
+.torre-blocco--esplode { pointer-events: none; }
+.torre-blocco--esplode .torre-blocco__corpo {
+  animation: torre-esplode 0.5s ease-out forwards;
+}
+
+.torre-scheggia {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 3px;
+  background: var(--col, #ffd9a8);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+  animation: torre-scheggia 0.55s ease-out forwards;
+}
+
+@keyframes torre-ondeggia {
+  from { transform: rotate(calc(var(--rot, 0deg) - 0.7deg)); }
+  to { transform: rotate(calc(var(--rot, 0deg) + 0.7deg)); }
+}
+
+@keyframes torre-esplode {
+  0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+  30% { transform: scale(1.25); opacity: 1; filter: brightness(1.25); }
+  100% { transform: scale(1.7); opacity: 0; filter: brightness(1.4); }
+}
+
+@keyframes torre-scheggia {
+  from { transform: translate(0, 0) rotate(0) scale(1); opacity: 1; }
+  to { transform: translate(var(--dx), var(--dy)) rotate(200deg) scale(0.3); opacity: 0; }
+}
+
+@keyframes torre-lampeggia {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+@keyframes torre-trema {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .torre-blocco--pila .torre-blocco__corpo { animation: none; }
+  .torre-campo--piena, .torre-campo--allerta .torre-limite { animation: none; }
+}
+
+@media (max-width: 600px) {
+  /* telefono: l'istruzione va su piu' righe, il campo e' un po' piu' basso */
+  .torre-campo {
+    height: clamp(360px, calc(100vh - 320px), 780px);
+    height: clamp(360px, calc(100dvh - 320px), 780px);
+  }
+}
