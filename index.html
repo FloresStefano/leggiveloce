@@ -220,6 +220,42 @@
     </div>
   </section>
 
+  <!-- SCHERMATA GIOCO 10: Muraglia cinese -->
+  <section id="schermo-muraglia" class="screen screen--torre screen--muraglia">
+    <div class="gioco">
+      <div class="gioco__header gioco__header--compatto">
+        <div class="titolo-gruppo">
+          <div class="gioco__titolo">🐌 Muraglia cinese</div>
+        </div>
+        <div class="torre-indicatori">
+          <div id="muraglia-contatore" class="torre-contatore" aria-live="off">0/40</div>
+          <div id="muraglia-cronometro" class="cronometro">0.0s</div>
+        </div>
+      </div>
+
+      <p class="abbina-istruzioni">Dì ad alta voce tutte le parole del muro (o fai doppio tocco sul mattone): ogni parola detta sparisce per 15 secondi. Non aprire un varco dall'alto in basso, o la lumaca cade!</p>
+
+      <div class="gioco-area torre-area">
+        <div id="muraglia-campo" class="torre-campo muraglia-campo" role="group" aria-label="Muraglia cinese">
+          <div id="muraglia-muro" class="muraglia-muro"></div>
+          <div id="muraglia-lumaca" class="muraglia-lumaca" aria-hidden="true"><span class="muraglia-lumaca__corpo">🐌</span></div>
+        </div>
+
+        <div id="muraglia-countdown-overlay" class="countdown-overlay">
+          <span id="muraglia-countdown-testo" class="countdown-testo">3</span>
+        </div>
+      </div>
+
+      <span id="muraglia-ascolto-stato" class="ascolto-stato" aria-live="polite" hidden></span>
+
+      <div class="gioco__azioni">
+        <button id="muraglia-btn-ricomincia" class="btn-secondario">🔁 Ricomincia</button>
+        <button id="muraglia-btn-nuova-sfida" class="btn-secondario">🎲 Nuova sfida</button>
+        <button id="muraglia-btn-esci" class="btn-secondario">🏠 Esci</button>
+      </div>
+    </div>
+  </section>
+
   <!-- SCHERMATA GIOCO 6: Lettere speculari -->
   <section id="schermo-lettere" class="screen">
     <div class="gioco">

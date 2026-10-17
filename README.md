@@ -50,8 +50,9 @@ non fa nulla.
 
 Le soglie sono comuni a tutti i giochi (`SOGLIE_STELLE_SECONDI` in
 `js/giocatore.js`); un gioco può averne di sue con `soglieStelle: [a, b, c]`
-in `js/games.js`. Eccezione: la **Torre di parole** non usa il tempo ma una
-stellina ogni 10 parole fatte esplodere (da 0 a 10).
+in `js/games.js`. Eccezioni: la **Torre di parole** non usa il tempo ma una
+stellina ogni 10 parole fatte esplodere (da 0 a 10); la **Muraglia cinese** ha
+soglie proporzionali al numero di mattoni del muro.
 
 **Scelte fatte in autonomia, da confermare o correggere:**
 - la richiesta diceva "1 stellina sotto i 30 secondi, 0 oltre i 40": ho
@@ -485,16 +486,50 @@ delle parole a schermo che si aggiorna man mano.
   per i test: in uso normale vale 1) e un riconoscitore simulato: la resa con
   voci di bambini e il ritmo della caduta vanno verificati sul tablet.
 
+## 🐌 Gioco 10: "Muraglia cinese"
+
+Dopo il conto alla rovescia 3-2-1 compare un **muro di 10 file di mattoni**:
+ogni mattone è una parola bisillaba o trisillaba (le stesse dei Giochi 1 e 3,
+tutte diverse), da **3 a 5 per fila** a seconda di quanto è largo lo schermo,
+larghi in proporzione alla parola e **sfalsati** come in un muro vero. Sulla
+cima del muro una **lumaca** va avanti e indietro.
+
+1. Il bambino **dice ad alta voce una parola** del muro (o fa doppio tocco sul
+   mattone): il mattone **sparisce per 15 secondi** (resta una sagoma
+   tratteggiata con una barretta che si accorcia) e poi **torna**, con una ✓.
+2. Se si apre un **varco verticale**, cioè in tutte e 10 le file manca il
+   mattone nello stesso punto, la **lumaca corre sopra il varco e cade**: la
+   partita è persa (0 stelline). Il varco si colora di rosso.
+3. Si **vince** dicendo **tutte le parole** del muro almeno una volta. Il trucco
+   è scegliere parole lontane tra loro, o aspettare che tornino quelle sotto.
+4. In alto: parole dette ("12/40") e tempo. **Stelline dal tempo**, con soglie
+   proporzionali al numero di mattoni: 2, 3 e 4,5 secondi a mattone (con 40
+   mattoni: 3 stelline sotto 80 s, 2 sotto 120 s, 1 sotto 180 s). Costanti
+   `MURAGLIA_*` in `js/app.js`, sezione "GIOCO 10".
+
+**Scelte fatte in autonomia, da confermare o correggere:**
+- una parola già detta, quando torna, **non si può più far sparire** (né a voce
+  né col tocco): conta solo la prima volta e così non si rompe il muro
+  ripetendola per sbaglio.
+- quando in un punto mancano già 8 o 9 file su 10 il bordo del campo diventa
+  arancione, come avviso.
+- un varco deve essere largo almeno un quarto dell'altezza di un mattone: una
+  fessura più sottile è solo una fuga tra mattoni. Costruendo il muro le fughe
+  di due file vicine non vengono mai allineate.
+- anche un varco sul bordo destro o sinistro del muro fa cadere la lumaca.
+- **Ricomincia** e **Ripeti la sfida** rifanno lo stesso muro; **Nuova sfida**
+  ne costruisce uno nuovo.
+
 Altri giochi compariranno in home come schede "Prossimamente" (disattive)
 finché non verranno definiti e attivati.
 
 ## 🗂️ Struttura del progetto
 
 ```
-index.html                             home, giochi 1-9, finestra di fine partita
+index.html                             home, giochi 1-10, finestra di fine partita
 css/style.css                          stile grafico, responsive, per tablet
 js/games.js                            elenco dei giochi (id, tipo, attivo/non attivo)
-js/ascolto.js                          ascolto a voce (Giochi 1, 3, 4, 5, 6 e 9)
+js/ascolto.js                          ascolto a voce (Giochi 1, 3, 4, 5, 6, 9 e 10)
 js/ascolto-frase.js                    ascolto di frasi intere "sette più cinque uguale dodici" (Giochi 7 e 8)
 js/giocatore.js                        giocatore di sessione, avatar, stelline
 js/fine-partita.js                     finestra di fine partita + coriandoli

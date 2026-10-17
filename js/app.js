@@ -38,6 +38,7 @@
     riporto: $("#schermo-riporto"),
     tabelline: $("#schermo-tabelline"),
     torre: $("#schermo-torre"),
+    muraglia: $("#schermo-muraglia"),
   };
 
   const el = {
@@ -128,6 +129,17 @@
     torreBtnRicomincia: $("#torre-btn-ricomincia"),
     torreBtnNuovaSfida: $("#torre-btn-nuova-sfida"),
     torreBtnEsci: $("#torre-btn-esci"),
+    // gioco 10: muraglia cinese
+    muragliaCampo: $("#muraglia-campo"),
+    muragliaMuro: $("#muraglia-muro"),
+    muragliaLumaca: $("#muraglia-lumaca"),
+    muragliaContatore: $("#muraglia-contatore"),
+    muragliaCronometro: $("#muraglia-cronometro"),
+    muragliaCountdownOverlay: $("#muraglia-countdown-overlay"),
+    muragliaCountdownTesto: $("#muraglia-countdown-testo"),
+    muragliaBtnRicomincia: $("#muraglia-btn-ricomincia"),
+    muragliaBtnNuovaSfida: $("#muraglia-btn-nuova-sfida"),
+    muragliaBtnEsci: $("#muraglia-btn-esci"),
     riportoCountdownOverlay: $("#riporto-countdown-overlay"),
     riportoCountdownTesto: $("#riporto-countdown-testo"),
     riportoBtnRicomincia: $("#riporto-btn-ricomincia"),
@@ -258,6 +270,7 @@
     else if (gioco.tipo === "riporto") avviaRiporto(gameId);
     else if (gioco.tipo === "tabelline") avviaTabelline(gameId);
     else if (gioco.tipo === "torre") avviaTorre(gameId);
+    else if (gioco.tipo === "muraglia") avviaMuraglia(gameId);
     else avviaLettura(gameId);
   }
 
@@ -271,7 +284,7 @@
 
   // Tipi di partita che possono avere l'ascolto a voce (js/ascolto.js).
   function usaAscolto(tipo) {
-    return tipo === "lettura" || tipo === "fette" || tipo === "lettere" || tipo === "torre";
+    return tipo === "lettura" || tipo === "fette" || tipo === "lettere" || tipo === "torre" || tipo === "muraglia";
   }
 
   // Chiave per confrontare le parole: niente maiuscole ne' accenti, cosi' due
@@ -2264,11 +2277,457 @@
     }
   }
 
+  // ---------- GIOCO 10: Muraglia cinese ----------
+
+  // Un muro di 10 file di mattoni: ogni mattone e' una parola (bisillabe e
+  // trisillabe dei Giochi 1 e 3, tutte diverse), da 3 a 5 per fila, larghi
+  // in proporzione alla parola e sfalsati come in un muro vero. Detta ad alta
+  // voce (o con doppio tocco) la parola sparisce per 15 secondi e poi torna,
+  // segnata come fatta (non si puo' piu' far sparire). Sulla cima va avanti e
+  // indietro una lumaca: se si apre un varco verticale (in tutte le file manca
+  // il mattone allo stesso punto) la lumaca cade e la partita e' persa. Si
+  // vince dicendo tutte le parole; le stelline dipendono dal tempo, con soglie
+  // proporzionali al numero di mattoni.
+  const MURAGLIA_FILE = 10;
+  const MURAGLIA_MIN_PER_FILA = 3;
+  const MURAGLIA_MAX_PER_FILA = 5;
+  const MURAGLIA_ASSENZA_S = 15; // secondi in cui una parola detta resta fuori dal muro
+  const MURAGLIA_SEC_PER_PAROLA = [2, 3, 4.5]; // soglie stelline: secondi per mattone (3, 2, 1 stellina)
+  const MURAGLIA_VARCO_MIN = 0.25; // larghezza minima di un varco, in altezze di mattone (piu' stretto e' solo una fuga)
+  const MURAGLIA_GIUNTO_MIN = 0.6; // distanza minima tra le fughe di due file vicine, in altezze di mattone
+  const MURAGLIA_VEL_LUMACA = 0.8; // altezze di mattone al secondo
+  const MURAGLIA_CORSA_LUMACA = 7; // quando si apre il varco la lumaca ci corre sopra (altezze di mattone al secondo)
+  const MURAGLIA_GRAVITA = 30; // altezze di mattone al secondo^2, per la caduta della lumaca
+  const MURAGLIA_COLORI = ["#f2a27a", "#e8916a", "#f5b48c", "#eb9c74", "#f0ab84", "#e48a63"];
+  const DOPPIO_MURAGLIA_MS = 450;
+
+  let muragliaRaf = null;
+  let muragliaUltimoT = 0;
+  let muragliaUltimoTocco = { id: -1, t: 0 };
+
+  function impostaBottoniMuraglia(abilitati) {
+    el.muragliaBtnRicomincia.disabled = !abilitati;
+    el.muragliaBtnNuovaSfida.disabled = !abilitati;
+    // muraglia-btn-esci resta sempre cliccabile
+  }
+
+  function avviaMuraglia(gameId) {
+    const gioco = GAMES.find((g) => g.id === gameId);
+    if (!gioco || !gioco.attivo) return;
+    fermaCicloMuraglia();
+    if (window.AscoltoFrase) window.AscoltoFrase.ferma();
+    clearInterval(timerIntervalId);
+    stato = {
+      gameId,
+      tipo: "muraglia",
+      schema: null, // disposizione dei mattoni (parola, fila, x0, x1 in frazioni della larghezza): resta uguale con Ricomincia
+      mattoni: [],
+      attivi: [], // mattoni a schermo non ancora detti: e' l'elenco che ascolta la voce
+      dette: 0,
+      lumaca: { x: 0.1, dir: 1, y: 0, vy: 0 },
+      varco: null,
+      fine: false,
+      vittoria: false,
+      accumulatoMs: 0,
+      inCorso: false,
+      inizioSegmento: null,
+      cronometroEl: el.muragliaCronometro,
+    };
+    iniziaPartitaMuraglia();
+  }
+
+  // Parte (o riparte) la partita con il muro di "stato" (lo costruisce la prima volta).
+  function iniziaPartitaMuraglia() {
+    const s = stato;
+    fermaCicloMuraglia();
+    s.dette = 0;
+    s.varco = null;
+    s.fine = false;
+    s.vittoria = false;
+    s.accumulatoMs = 0;
+    s.inCorso = false;
+    s.inizioSegmento = null;
+    s.lumaca = { x: 0.1, dir: 1, y: 0, vy: 0, cade: false };
+    el.muragliaCampo.classList.remove("muraglia-campo--allerta", "muraglia-campo--rotto");
+    el.muragliaCampo.querySelectorAll(".muraglia-varco").forEach((n) => n.remove());
+    el.muragliaLumaca.classList.remove("muraglia-lumaca--cade");
+    el.muragliaCronometro.textContent = formattaTempo(0);
+    mostraSchermo("muraglia");
+    calcolaGeometriaMuraglia();
+    if (!s.schema) s.schema = costruisciSchemaMuraglia();
+    disegnaMuraglia();
+    aggiornaContatoreMuraglia();
+    posizionaLumaca();
+    apriAscoltoMuraglia();
+    eseguiCountdown(el.muragliaCampo, el.muragliaCountdownOverlay, el.muragliaCountdownTesto, impostaBottoniMuraglia, () => {
+      avviaCronometro();
+      avviaCicloMuraglia();
+    });
+  }
+
+  function ricominciaMuraglia() {
+    if (!stato || stato.tipo !== "muraglia") return;
+    clearInterval(timerIntervalId);
+    if (window.Ascolto) window.Ascolto.chiudi();
+    iniziaPartitaMuraglia();
+  }
+
+  function nuovaSfidaMuraglia() {
+    if (!stato) return;
+    avviaMuraglia(stato.gameId);
+  }
+
+  function apriAscoltoMuraglia() {
+    const partita = stato;
+    if (!window.Ascolto) return;
+    window.Ascolto.apri({
+      abilitato: true,
+      schermo: "muraglia",
+      modo: "selezione",
+      parole: partita.attivi, // elenco "vivo": le parole dette ne escono
+      inCorso: () => stato === partita && partita.inCorso && !partita.fine,
+      inPausa: () => !(stato === partita && partita.inCorso),
+      alTrovata: (i) => {
+        if (stato !== partita || partita.fine) return;
+        const m = partita.attivi[i];
+        if (m) levaMattone(m);
+      },
+    });
+  }
+
+  // ----- Costruzione del muro -----
+
+  // Larghezza "naturale" di un mattone, in altezze di mattone: la parola con un po' di margine.
+  function larghezzaNaturaleMattone(parola) {
+    return 0.6 + 0.3 * parola.length;
+  }
+
+  // Le fughe (giunti verticali) di una fila, in frazioni della larghezza, senza i bordi.
+  function fugheFila(larghezze) {
+    const tot = larghezze.reduce((a, b) => a + b, 0);
+    const out = [];
+    let acc = 0;
+    for (let i = 0; i < larghezze.length - 1; i++) {
+      acc += larghezze[i];
+      out.push(acc / tot);
+    }
+    return out;
+  }
+
+  // Sceglie le parole e le dispone in 10 file. Quante per fila dipende da quanto
+  // e' largo il campo (da 3 a 5); le fughe di due file vicine non si allineano.
+  function costruisciSchemaMuraglia() {
+    const { H, larg } = stato.geo;
+    const capienza = larg / H; // larghezza della fila in altezze di mattone
+    const distMin = (MURAGLIA_GIUNTO_MIN * H) / larg;
+    const pool = sequenzaTorre(); // 100 parole mescolate, tutte diverse (ne servono al massimo 50)
+    let p = 0;
+    let fughePrima = [];
+    const schema = [];
+    for (let fila = 0; fila < MURAGLIA_FILE; fila++) {
+      // quante ne stanno senza schiacciarle: da 5 in giu', mai meno di 3
+      let k = MURAGLIA_MAX_PER_FILA;
+      while (k > MURAGLIA_MIN_PER_FILA) {
+        const somma = pool.slice(p, p + k).reduce((a, w) => a + larghezzaNaturaleMattone(w), 0);
+        if (somma <= capienza) break;
+        k--;
+      }
+      // un po' di varieta': a volte una in meno (fila con mattoni piu' lunghi)
+      if (k > MURAGLIA_MIN_PER_FILA && Math.random() < 0.35) k--;
+      let parole = pool.slice(p, p + k);
+      p += k;
+      // si rimescola l'ordine finche' le fughe non cadono sopra quelle della fila precedente
+      let fughe = fugheFila(parole.map(larghezzaNaturaleMattone));
+      for (let tentativo = 0; tentativo < 12; tentativo++) {
+        const allineata = fughe.some((f) => fughePrima.some((g) => Math.abs(f - g) < distMin));
+        if (!allineata) break;
+        parole = mescola(parole);
+        fughe = fugheFila(parole.map(larghezzaNaturaleMattone));
+      }
+      const bordi = [0].concat(fughe, [1]);
+      parole.forEach((parola, i) => schema.push({ parola, fila, x0: bordi[i], x1: bordi[i + 1] }));
+      fughePrima = fughe;
+    }
+    return schema;
+  }
+
+  // Disegna i mattoni dello schema, tutti al loro posto e non ancora detti.
+  function disegnaMuraglia() {
+    const s = stato;
+    el.muragliaMuro.innerHTML = "";
+    s.mattoni = s.schema.map((sm, n) => {
+      const nodo = document.createElement("div");
+      nodo.className = "muraglia-mattone";
+      nodo.dataset.id = String(n);
+      nodo.setAttribute("aria-label", sm.parola);
+      const corpo = document.createElement("div");
+      corpo.className = "muraglia-mattone__corpo";
+      corpo.textContent = sm.parola;
+      corpo.style.setProperty("--col", MURAGLIA_COLORI[Math.floor(Math.random() * MURAGLIA_COLORI.length)]);
+      const resto = document.createElement("div");
+      resto.className = "muraglia-mattone__resto";
+      nodo.appendChild(corpo);
+      nodo.appendChild(resto);
+      el.muragliaMuro.appendChild(nodo);
+      return Object.assign({ id: n, el: nodo, corpo, resto, via: false, fatto: false, ritorno: 0 }, sm);
+    });
+    s.attivi.length = 0;
+    s.mattoni.forEach((m) => s.attivi.push(m));
+    dimensionaMuraglia();
+  }
+
+  // ----- Geometria (si ricalcola se cambia la finestra; lo schema resta in frazioni) -----
+
+  function calcolaGeometriaMuraglia() {
+    const campo = el.muragliaCampo;
+    const alt = campo.clientHeight || 480;
+    const larg = campo.clientWidth || 320;
+    const H = Math.max(26, Math.min(60, Math.floor(alt / (MURAGLIA_FILE + 1.6))));
+    stato.geo = { H, larg, alt, cima: alt - MURAGLIA_FILE * H }; // cima: y del bordo superiore del muro
+  }
+
+  function dimensionaMuraglia() {
+    const { H, larg, cima } = stato.geo;
+    el.muragliaMuro.style.top = cima + "px";
+    el.muragliaMuro.style.height = MURAGLIA_FILE * H + "px";
+    el.muragliaCampo.style.setProperty("--muraglia-h", H + "px");
+    stato.mattoni.forEach((m) => {
+      const w = (m.x1 - m.x0) * larg;
+      m.el.style.left = (m.x0 * larg).toFixed(1) + "px";
+      m.el.style.top = m.fila * H + "px";
+      m.el.style.width = w.toFixed(1) + "px";
+      m.el.style.height = H + "px";
+      m.el.style.setProperty("--fs", Math.round(Math.min(H * 0.5, (w - 10) / (m.parola.length * 0.6 + 0.4))) + "px");
+    });
+  }
+
+  function ricalcolaMuraglia() {
+    if (!stato || stato.tipo !== "muraglia") return;
+    calcolaGeometriaMuraglia();
+    dimensionaMuraglia();
+    posizionaLumaca();
+    if (stato.varco) mostraVarco(stato.varco);
+  }
+
+  function posizionaLumaca() {
+    const { H, larg, cima } = stato.geo;
+    const l = stato.lumaca;
+    const x = l.x * larg - H * 0.55;
+    const y = cima - H * 0.95 + l.y;
+    el.muragliaLumaca.style.setProperty("--muraglia-h", H + "px");
+    el.muragliaLumaca.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+    // l'emoji guarda a sinistra: quando va a destra si gira
+    el.muragliaLumaca.classList.toggle("muraglia-lumaca--destra", l.dir > 0);
+  }
+
+  // ----- Parole dette, varchi -----
+
+  function aggiornaContatoreMuraglia() {
+    el.muragliaContatore.textContent = `${stato.dette}/${stato.mattoni.length}`;
+  }
+
+  function levaMattone(m) {
+    const s = stato;
+    if (!s || s.fine || m.via || m.fatto) return;
+    const i = s.attivi.indexOf(m);
+    if (i >= 0) s.attivi.splice(i, 1);
+    m.via = true;
+    m.fatto = true;
+    m.ritorno = MURAGLIA_ASSENZA_S;
+    m.el.classList.add("muraglia-mattone--via");
+    m.resto.style.setProperty("--resto", "1");
+    s.dette++;
+    aggiornaContatoreMuraglia();
+
+    const esame = esaminaMuro();
+    if (esame.varco) {
+      rompiMuraglia(esame.varco);
+      return;
+    }
+    el.muragliaCampo.classList.toggle("muraglia-campo--allerta", esame.maxVuote >= MURAGLIA_FILE - 2);
+    if (s.dette >= s.mattoni.length) {
+      // tutte le parole dette senza rompere il muro
+      s.fine = true;
+      s.vittoria = true;
+      fermaCicloMuraglia();
+      el.muragliaCampo.classList.remove("muraglia-campo--allerta");
+      pausaCronometro(); // ferma anche il microfono
+      mostraModaleFineTra(900);
+    }
+  }
+
+  // Cerca un varco: una striscia verticale (larga almeno MURAGLIA_VARCO_MIN) in cui
+  // in TUTTE le file il mattone manca. Restituisce anche il massimo di file vuote
+  // nello stesso punto, per avvisare quando il muro sta per rompersi.
+  function esaminaMuro() {
+    const s = stato;
+    const { H, larg } = s.geo;
+    const bordi = Array.from(new Set(s.mattoni.flatMap((m) => [m.x0, m.x1]))).sort((a, b) => a - b);
+    let maxVuote = 0;
+    let migliore = null;
+    let inizio = null;
+    for (let i = 0; i < bordi.length - 1; i++) {
+      const a = bordi[i];
+      const b = bordi[i + 1];
+      if (b - a < 1e-6) continue;
+      const mezzo = (a + b) / 2;
+      const vuote = s.mattoni.filter((m) => m.via && m.x0 <= mezzo && mezzo < m.x1).length;
+      maxVuote = Math.max(maxVuote, vuote);
+      if (vuote >= MURAGLIA_FILE) {
+        if (inizio === null) inizio = a;
+        const largo = (b - inizio) * larg;
+        if (largo >= MURAGLIA_VARCO_MIN * H && (!migliore || b - inizio > migliore.b - migliore.a)) migliore = { a: inizio, b };
+      } else {
+        inizio = null;
+      }
+    }
+    return { varco: migliore, maxVuote };
+  }
+
+  function mostraVarco(v) {
+    const { larg } = stato.geo;
+    let nodo = el.muragliaCampo.querySelector(".muraglia-varco");
+    if (!nodo) {
+      nodo = document.createElement("div");
+      nodo.className = "muraglia-varco";
+      el.muragliaCampo.insertBefore(nodo, el.muragliaLumaca);
+    }
+    nodo.style.left = (v.a * larg).toFixed(1) + "px";
+    nodo.style.width = ((v.b - v.a) * larg).toFixed(1) + "px";
+    nodo.style.top = stato.geo.cima + "px";
+  }
+
+  // Si e' aperto un varco: il tempo si ferma, la lumaca corre fin sopra il varco e cade.
+  function rompiMuraglia(v) {
+    const s = stato;
+    s.fine = true;
+    s.vittoria = false;
+    s.varco = v;
+    pausaCronometro(); // ferma anche il microfono
+    el.muragliaCampo.classList.remove("muraglia-campo--allerta");
+    el.muragliaCampo.classList.add("muraglia-campo--rotto");
+    mostraVarco(v);
+    s.lumaca.cade = true;
+    if (!muragliaRaf) avviaCicloMuraglia();
+  }
+
+  function soglieMuraglia() {
+    const n = stato.mattoni.length;
+    return MURAGLIA_SEC_PER_PAROLA.map((k) => Math.max(5, Math.round((n * k) / 5) * 5));
+  }
+
+  function modaleMuraglia(stelle, soglie) {
+    const s = stato;
+    const n = s.mattoni.length;
+    const legenda = `Dì tutte le ${n} parole senza aprire un varco: 3 stelline sotto i ${soglie[0]} secondi · 2 sotto i ${soglie[1]} · 1 sotto i ${soglie[2]}`;
+    if (s.vittoria) return { legenda };
+    return {
+      titolo: "La lumaca è caduta!",
+      messaggio: `Hai detto ${s.dette} parole su ${n}, ma si è aperto un varco nel muro. Scegli parole lontane tra loro e riprova!`,
+      legenda,
+      coriandoli: false,
+    };
+  }
+
+  // ----- Ciclo di animazione: lumaca e parole che tornano -----
+
+  function avviaCicloMuraglia() {
+    fermaCicloMuraglia();
+    muragliaUltimoT = 0;
+    muragliaRaf = requestAnimationFrame(passoMuraglia);
+  }
+
+  function fermaCicloMuraglia() {
+    if (muragliaRaf) cancelAnimationFrame(muragliaRaf);
+    muragliaRaf = null;
+  }
+
+  function passoMuraglia(t) {
+    const s = stato;
+    if (!s || s.tipo !== "muraglia" || (s.fine && !s.lumaca.cade)) { muragliaRaf = null; return; }
+    const scala = Number(window.__muragliaScala) > 0 ? Number(window.__muragliaScala) : 1; // solo per i test
+    const dt = muragliaUltimoT ? Math.min(0.05, (t - muragliaUltimoT) / 1000) * scala : 0;
+    muragliaUltimoT = t;
+    muragliaRaf = requestAnimationFrame(passoMuraglia);
+    if (dt <= 0) return;
+
+    const { H, larg, alt } = s.geo;
+    const l = s.lumaca;
+    const margine = (H * 0.55) / larg;
+
+    if (l.cade) {
+      // corre fin sopra il varco, poi cade giu'
+      const meta = (s.varco.a + s.varco.b) / 2;
+      const passo = (MURAGLIA_CORSA_LUMACA * H * dt) / larg;
+      if (Math.abs(meta - l.x) > passo && l.y === 0) {
+        l.dir = meta > l.x ? 1 : -1;
+        l.x += l.dir * passo;
+      } else {
+        l.x = meta;
+        l.vy += MURAGLIA_GRAVITA * H * dt;
+        l.y += l.vy * dt;
+        el.muragliaLumaca.classList.add("muraglia-lumaca--cade");
+      }
+      posizionaLumaca();
+      if (l.y > alt) {
+        l.cade = false;
+        fermaCicloMuraglia();
+        const partita = s;
+        setTimeout(() => {
+          if (stato === partita && partita.fine) mostraModaleFine();
+        }, 350);
+      }
+      return;
+    }
+
+    if (!s.inCorso) return;
+
+    // la lumaca va avanti e indietro sulla cima
+    l.x += (l.dir * MURAGLIA_VEL_LUMACA * H * dt) / larg;
+    if (l.x > 1 - margine) { l.x = 1 - margine; l.dir = -1; }
+    if (l.x < margine) { l.x = margine; l.dir = 1; }
+    posizionaLumaca();
+
+    // le parole dette tornano al loro posto dopo 15 secondi
+    let tornate = false;
+    s.mattoni.forEach((m) => {
+      if (!m.via) return;
+      m.ritorno -= dt;
+      m.resto.style.setProperty("--resto", Math.max(0, m.ritorno / MURAGLIA_ASSENZA_S).toFixed(3));
+      if (m.ritorno <= 0) {
+        m.via = false;
+        m.el.classList.remove("muraglia-mattone--via");
+        m.el.classList.add("muraglia-mattone--fatto");
+        tornate = true;
+      }
+    });
+    if (tornate) el.muragliaCampo.classList.toggle("muraglia-campo--allerta", esaminaMuro().maxVuote >= MURAGLIA_FILE - 2);
+  }
+
+  // ----- Tocchi: doppio tocco su un mattone = come se fosse stato detto -----
+
+  function toccoMuraglia(e) {
+    const s = stato;
+    if (!s || s.tipo !== "muraglia" || !s.inCorso || s.fine) return;
+    const nodo = e.target.closest(".muraglia-mattone");
+    if (!nodo) return;
+    const id = Number(nodo.dataset.id);
+    const ora = performance.now();
+    if (muragliaUltimoTocco.id === id && ora - muragliaUltimoTocco.t <= DOPPIO_MURAGLIA_MS) {
+      muragliaUltimoTocco = { id: -1, t: 0 };
+      const m = s.mattoni[id];
+      if (m) levaMattone(m);
+    } else {
+      muragliaUltimoTocco = { id, t: ora };
+    }
+  }
+
   // ---------- Uscita dal gioco ----------
 
   function esciDalGioco() {
     countdownCorrente++; // ferma un eventuale conto alla rovescia in corso
     fermaCicloTorre();
+    fermaCicloMuraglia();
     clearInterval(timerIntervalId);
     annullaDragRiporto();
     if (window.AscoltoFrase) window.AscoltoFrase.ferma();
@@ -2295,14 +2754,19 @@
   function mostraModaleFine() {
     if (!stato || !window.FinePartita || window.FinePartita.aperta()) return;
     const gioco = GAMES.find((g) => g.id === stato.gameId);
-    const soglie = (gioco && gioco.soglieStelle) || window.Giocatore.SOGLIE_STELLE_SECONDI;
+    const muraglia = stato.tipo === "muraglia";
+    // Muraglia cinese: soglie proporzionali al numero di mattoni del muro
+    const soglie = muraglia ? soglieMuraglia() : (gioco && gioco.soglieStelle) || window.Giocatore.SOGLIE_STELLE_SECONDI;
     const tempoFinale = tempoTrascorsoMs();
     // Torre di parole: le stelline non dipendono dal tempo ma dalle parole fatte esplodere
     const torre = stato.tipo === "torre";
-    const stelle = torre ? Math.floor(stato.esplose / TORRE_PAROLE_PER_STELLA) : window.Giocatore.stelleDaTempo(tempoFinale, soglie);
+    let stelle;
+    if (torre) stelle = Math.floor(stato.esplose / TORRE_PAROLE_PER_STELLA);
+    else if (muraglia && !stato.vittoria) stelle = 0; // la lumaca e' caduta
+    else stelle = window.Giocatore.stelleDaTempo(tempoFinale, soglie);
     window.Giocatore.aggiungiStelle(stato.gameId, stelle);
 
-    const extra = torre ? modaleTorre(stelle) : {};
+    const extra = torre ? modaleTorre(stelle) : muraglia ? modaleMuraglia(stelle, soglie) : {};
     window.FinePartita.mostra(Object.assign({
       gioco: gioco ? `${gioco.emoji} ${gioco.titolo}` : "",
       tempo: tempoFinale,
@@ -2322,6 +2786,7 @@
     else if (stato.tipo === "riporto") ricominciaRiporto();
     else if (stato.tipo === "tabelline") ricominciaTabelline();
     else if (stato.tipo === "torre") ricominciaTorre();
+    else if (stato.tipo === "muraglia") ricominciaMuraglia();
     else ricominciaAbbinamento();
   }
 
@@ -2333,6 +2798,7 @@
     else if (stato.tipo === "riporto") nuovaSfidaRiporto();
     else if (stato.tipo === "tabelline") nuovaSfidaTabelline();
     else if (stato.tipo === "torre") nuovaSfidaTorre();
+    else if (stato.tipo === "muraglia") nuovaSfidaMuraglia();
     else nuovaSfidaAbbinamento();
   }
 
@@ -2377,6 +2843,13 @@
     el.torreBtnEsci.addEventListener("click", esciDalGioco);
     el.torreCampo.addEventListener("click", toccoTorre);
     window.addEventListener("resize", ricalcolaTorre);
+
+    // gioco 10: muraglia cinese
+    el.muragliaBtnRicomincia.addEventListener("click", ricominciaMuraglia);
+    el.muragliaBtnNuovaSfida.addEventListener("click", nuovaSfidaMuraglia);
+    el.muragliaBtnEsci.addEventListener("click", esciDalGioco);
+    el.muragliaCampo.addEventListener("click", toccoMuraglia);
+    window.addEventListener("resize", ricalcolaMuraglia);
 
     // gioco 7: somme col riporto
     costruisciNumeriRiporto();

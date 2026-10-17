@@ -24,6 +24,12 @@
  *   cadono una alla volta e si impilano in una colonna; dette ad alta voce
  *   esplodono (la torre si assesta). Si perde con 10 blocchetti impilati.
  *   Stelline: una ogni 10 parole fatte esplodere (da 0 a 10), non dal tempo.
+ * - "muraglia": Muraglia cinese (Gioco 10): un muro di 10 file di mattoni-parola
+ *   (3-5 per fila). Una parola detta scompare per 15 secondi e poi torna. Sulla
+ *   cima cammina una lumaca: se si apre un varco verticale (in tutte le file
+ *   manca il mattone allo stesso punto) la lumaca cade e la partita e' persa.
+ *   Si vince dicendo tutte le parole almeno una volta; stelline dal tempo, con
+ *   soglie proporzionali al numero di mattoni (calcolate in app.js).
  *
  * "ascolto: true" attiva l'ascolto a voce opzionale di js/ascolto.js (giochi
  * di tipo "lettura", "frase", "fette" e "lettere"): interruttore "🎤 Ascolto" nella
@@ -126,6 +132,15 @@ const GAMES = [
     colore: "#7a5cd6",
     descrizione: "Le parole cadono e si impilano: dille ad alta voce per farle esplodere, prima che la torre arrivi in alto!",
     tipo: "torre",
+    attivo: true,
+  },
+  {
+    id: "muraglia-cinese",
+    titolo: "Muraglia cinese",
+    emoji: "🐌",
+    colore: "#c0612b",
+    descrizione: "Dì tutte le parole del muro, ma attento a non aprire un varco: la lumaca cadrebbe giù!",
+    tipo: "muraglia",
     attivo: true,
   },
   {
