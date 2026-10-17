@@ -1908,9 +1908,9 @@
   const TORRE_LIMITE = 10; // blocchetti impilati che fanno finire la partita
   const TORRE_PAROLE_PER_STELLA = 10;
   const TORRE_RIGHE = TORRE_LIMITE + 2; // il campo e' alto quanto 12 blocchetti
-  const TORRE_VEL_RIGHE_S = 1.3; // caduta lenta all'inizio: ~9 secondi per attraversare il campo vuoto
-  const TORRE_VEL_INCREMENTO = 0.15; // ogni 10 parole fatte esplodere la caduta accelera di tanto (righe al secondo)
-  const TORRE_PAROLE_PER_LIVELLO = 10; // a 90 parole la velocita' e' circa doppia (2.65 righe/s)
+  const TORRE_VEL_RIGHE_S = 2.0; // all'inizio ~5.5 secondi per attraversare il campo vuoto
+  const TORRE_VEL_FATTORE = 1.15; // ogni 10 parole fatte esplodere la caduta accelera del 15%
+  const TORRE_PAROLE_PER_LIVELLO = 10; // a 90 parole: ~7 righe/s (~1.6 secondi per attraversare il campo)
   const TORRE_ASSESTA_RIGHE_S = 9; // velocita' con cui la torre scende dopo un'esplosione
   const TORRE_ATTESA_SPAWN_S = 0.5; // pausa tra un blocchetto e il successivo
   const TORRE_ESPLOSIONE_MS = 600;
@@ -2095,9 +2095,9 @@
     s.cadente = b;
   }
 
-  // Velocita' di caduta (righe al secondo): sale di un gradino ogni 10 parole fatte esplodere.
+  // Velocita' di caduta (righe al secondo): +15% ogni 10 parole fatte esplodere.
   function velocitaTorre() {
-    return TORRE_VEL_RIGHE_S + TORRE_VEL_INCREMENTO * Math.floor(stato.esplose / TORRE_PAROLE_PER_LIVELLO);
+    return TORRE_VEL_RIGHE_S * Math.pow(TORRE_VEL_FATTORE, Math.floor(stato.esplose / TORRE_PAROLE_PER_LIVELLO));
   }
 
   function annunciaPiuVeloceTorre() {
