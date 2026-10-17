@@ -25,7 +25,7 @@
  *   esplodono (la torre si assesta). Si perde con 10 blocchetti impilati.
  *   Stelline: una ogni 10 parole fatte esplodere (da 0 a 10), non dal tempo.
  * - "muraglia": Muraglia cinese (Gioco 10): un muro di 10 file di mattoni-parola
- *   (3-5 per fila). Una parola detta scompare per 15 secondi e poi torna. Sulla
+ *   (3-5 per fila). Una parola detta scompare per 30 secondi e poi torna. Sulla
  *   cima cammina una lumaca: se si apre un varco verticale (in tutte le file
  *   manca il mattone allo stesso punto) la lumaca cade e la partita e' persa.
  *   Si vince dicendo tutte le parole almeno una volta; stelline dal tempo, con

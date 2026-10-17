@@ -495,12 +495,14 @@ larghi in proporzione alla parola e **sfalsati** come in un muro vero. Sulla
 cima del muro una **lumaca** va avanti e indietro.
 
 1. Il bambino **dice ad alta voce una parola** del muro (o fa doppio tocco sul
-   mattone): il mattone **sparisce per 15 secondi** (resta una sagoma
-   tratteggiata con una barretta che si accorcia) e poi **torna**, con una ✓.
+   mattone): il mattone **sparisce per 30 secondi** (resta una sagoma
+   tratteggiata con una barretta che si accorcia) e poi **torna** uguale a
+   prima: si può dire di nuovo e farlo sparire ancora.
 2. Se si apre un **varco verticale**, cioè in tutte e 10 le file manca il
    mattone nello stesso punto, la **lumaca corre sopra il varco e cade**: la
    partita è persa (0 stelline). Il varco si colora di rosso.
-3. Si **vince** dicendo **tutte le parole** del muro almeno una volta. Il trucco
+3. Si **vince** dicendo **tutte le parole** del muro almeno una volta (il
+   contatore conta solo la prima volta che si dice una parola). Il trucco
    è scegliere parole lontane tra loro, o aspettare che tornino quelle sotto.
 4. In alto: parole dette ("12/40") e tempo. **Stelline dal tempo**, con soglie
    proporzionali al numero di mattoni: 2, 3 e 4,5 secondi a mattone (con 40
@@ -508,9 +510,6 @@ cima del muro una **lumaca** va avanti e indietro.
    `MURAGLIA_*` in `js/app.js`, sezione "GIOCO 10".
 
 **Scelte fatte in autonomia, da confermare o correggere:**
-- una parola già detta, quando torna, **non si può più far sparire** (né a voce
-  né col tocco): conta solo la prima volta e così non si rompe il muro
-  ripetendola per sbaglio.
 - quando in un punto mancano già 8 o 9 file su 10 il bordo del campo diventa
   arancione, come avviso.
 - un varco deve essere largo almeno un quarto dell'altezza di un mattone: una

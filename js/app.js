@@ -2282,16 +2282,16 @@
   // Un muro di 10 file di mattoni: ogni mattone e' una parola (bisillabe e
   // trisillabe dei Giochi 1 e 3, tutte diverse), da 3 a 5 per fila, larghi
   // in proporzione alla parola e sfalsati come in un muro vero. Detta ad alta
-  // voce (o con doppio tocco) la parola sparisce per 15 secondi e poi torna,
-  // segnata come fatta (non si puo' piu' far sparire). Sulla cima va avanti e
+  // voce (o con doppio tocco) la parola sparisce per 30 secondi e poi torna
+  // (e si puo' far sparire di nuovo). Sulla cima va avanti e
   // indietro una lumaca: se si apre un varco verticale (in tutte le file manca
   // il mattone allo stesso punto) la lumaca cade e la partita e' persa. Si
-  // vince dicendo tutte le parole; le stelline dipendono dal tempo, con soglie
+  // vince dicendo tutte le parole almeno una volta; le stelline dipendono dal tempo, con soglie
   // proporzionali al numero di mattoni.
   const MURAGLIA_FILE = 10;
   const MURAGLIA_MIN_PER_FILA = 3;
   const MURAGLIA_MAX_PER_FILA = 5;
-  const MURAGLIA_ASSENZA_S = 15; // secondi in cui una parola detta resta fuori dal muro
+  const MURAGLIA_ASSENZA_S = 30; // secondi in cui una parola detta resta fuori dal muro
   const MURAGLIA_SEC_PER_PAROLA = [2, 3, 4.5]; // soglie stelline: secondi per mattone (3, 2, 1 stellina)
   const MURAGLIA_VARCO_MIN = 0.25; // larghezza minima di un varco, in altezze di mattone (piu' stretto e' solo una fuga)
   const MURAGLIA_GIUNTO_MIN = 0.6; // distanza minima tra le fughe di due file vicine, in altezze di mattone
@@ -2322,7 +2322,7 @@
       tipo: "muraglia",
       schema: null, // disposizione dei mattoni (parola, fila, x0, x1 in frazioni della larghezza): resta uguale con Ricomincia
       mattoni: [],
-      attivi: [], // mattoni a schermo non ancora detti: e' l'elenco che ascolta la voce
+      attivi: [], // mattoni al loro posto nel muro: e' l'elenco che ascolta la voce
       dette: 0,
       lumaca: { x: 0.1, dir: 1, y: 0, vy: 0 },
       varco: null,
@@ -2384,7 +2384,7 @@
       abilitato: true,
       schermo: "muraglia",
       modo: "selezione",
-      parole: partita.attivi, // elenco "vivo": le parole dette ne escono
+      parole: partita.attivi, // elenco "vivo": le parole dette ne escono e ci rientrano quando tornano
       inCorso: () => stato === partita && partita.inCorso && !partita.fine,
       inPausa: () => !(stato === partita && partita.inCorso),
       alTrovata: (i) => {
@@ -2528,16 +2528,20 @@
 
   function levaMattone(m) {
     const s = stato;
-    if (!s || s.fine || m.via || m.fatto) return;
+    if (!s || s.fine || m.via) return;
     const i = s.attivi.indexOf(m);
     if (i >= 0) s.attivi.splice(i, 1);
     m.via = true;
-    m.fatto = true;
     m.ritorno = MURAGLIA_ASSENZA_S;
+    m.el.classList.remove("muraglia-mattone--torna");
     m.el.classList.add("muraglia-mattone--via");
     m.resto.style.setProperty("--resto", "1");
-    s.dette++;
-    aggiornaContatoreMuraglia();
+    if (!m.fatto) {
+      // per vincere conta solo la prima volta che una parola viene detta
+      m.fatto = true;
+      s.dette++;
+      aggiornaContatoreMuraglia();
+    }
 
     const esame = esaminaMuro();
     if (esame.varco) {
@@ -2688,7 +2692,7 @@
     if (l.x < margine) { l.x = margine; l.dir = 1; }
     posizionaLumaca();
 
-    // le parole dette tornano al loro posto dopo 15 secondi
+    // le parole dette tornano al loro posto dopo 30 secondi (e si possono dire di nuovo)
     let tornate = false;
     s.mattoni.forEach((m) => {
       if (!m.via) return;
@@ -2697,7 +2701,8 @@
       if (m.ritorno <= 0) {
         m.via = false;
         m.el.classList.remove("muraglia-mattone--via");
-        m.el.classList.add("muraglia-mattone--fatto");
+        m.el.classList.add("muraglia-mattone--torna");
+        s.attivi.push(m);
         tornate = true;
       }
     });
